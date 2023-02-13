@@ -5,13 +5,12 @@
 
 int main()
 {
-    std::vector<Point<int, 2>> points{
-            {0, 0},
-            {1, 0},
-            {0, 1},
-            {1, 1},
-            {1, 2},
-            {0, 2}}; // points owned by MeshTriangulation
+    std::vector<Point<int, 2>> points{{0, 0},
+                                      {1, 0},
+                                      {0, 1},
+                                      {1, 1},
+                                      {1, 2},
+                                      {0, 2}}; // points owned by MeshTriangulation
 
     std::cout << "Points created !" << std::endl;
 
@@ -19,11 +18,11 @@ int main()
     reg.triangulateDelaunay();
 
     MeshTriangulation reg2{{0, 0},
-                            {1, 0},
-                            {0, 1},
-                            {1, 1},
-                            {1, 2},
-                            {0, 2}};
+                           {1, 0},
+                           {0, 1},
+                           {1, 1},
+                           {1, 2},
+                           {0, 2}};
     reg2.triangulateDelaunay();
     std::cout << reg2.wkt() << '\n';
     for (const auto &[k, v]: reg2.flippableLines())
