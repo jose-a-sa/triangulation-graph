@@ -1,8 +1,8 @@
 {
     "files.associations": {
-        "*.drawio": "xml",
         "*.m": "octave",
         ".prettierrc": "yaml",
+        "*.drawio": "xml",
         "random": "c",
         "tgmath.h": "c",
         "stdint.h": "c",
@@ -102,6 +102,13 @@
         "source_location": "cpp",
         "utility": "cpp",
         "hash_map": "cpp",
-        "climits": "cpp"
+        "climits": "cpp",
+        "__std_stream": "cpp",
+        "cfenv": "cpp",
+        "forward_list": "cpp",
+        "strstream": "cpp",
+        "typeindex": "cpp",
+        "valarray": "cpp",
+        "version": "cpp"
     }
 }
