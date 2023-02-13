@@ -13,18 +13,18 @@
 
 namespace boost::polygon
 {
-    template <>
+    template<>
     struct geometry_concept<Point<int, 2>>
     {
         typedef point_concept type;
     };
 
-    template <>
+    template<>
     struct point_traits<Point<int, 2>>
     {
         typedef int coordinate_type;
 
-        static inline coordinate_type get(const Point<int, 2> &point, orientation_2d orient)
+        static inline coordinate_type get(const Point<int, 2> &point, const orientation_2d &orient)
         {
             return (orient == HORIZONTAL) ? point[0] : point[1];
         }
@@ -35,20 +35,30 @@ class MeshTriangulation
 {
 public:
     MeshTriangulation(const MeshTriangulation &mesh) = default;
-    MeshTriangulation(const std::vector<Point<int, 2>> &pt);
-    MeshTriangulation(std::vector<Point<int, 2>> &&pt);
-    MeshTriangulation(std::initializer_list<Point<int, 2>> &&pt);
+
+    explicit MeshTriangulation(std::vector<Point<int, 2>> &&pt);
+
+    MeshTriangulation(std::initializer_list<Point<int, 2>> &&lst);
+
     ~MeshTriangulation();
+
     void triangulateDelaunay();
+
     void flipEdge(const LineCell &l);
-    const double triangleArea(const TriangleCell &t) const;
-    const bool collinear(std::size_t i1, std::size_t i2, std::size_t i3) const;
-    const std::vector<Point<int, 2>> &points() const;
+
+    double triangleArea(const TriangleCell &t) const;
+
+    bool collinear(std::size_t i1, std::size_t i2, std::size_t i3) const;
+
     const std::set<LineCell> &lines() const;
+
     const std::set<TriangleCell> &triangles() const;
+
     const std::unordered_map<LineCell, LineCell> &flippableLines() const;
+
     const std::unordered_map<LineCell, std::set<TriangleCell>> &edgeTriangleAdjacency() const;
-    const std::string wkt() const;
+
+    std::string wkt() const;
 
 private:
     std::vector<Point<int, 2>> points_;
@@ -56,28 +66,23 @@ private:
     std::set<TriangleCell> triangles_;
     std::unordered_map<LineCell, std::set<TriangleCell>> edgeTrigAdj_;
     std::unordered_map<LineCell, LineCell> flippable_;
+
     void computeConnectivity_();
+
     void computeConnectivity_(const LineCell &l);
 };
 
-inline MeshTriangulation::MeshTriangulation(const std::vector<Point<int, 2>> &pt)
-    : points_(pt)
-{
-}
-
 inline MeshTriangulation::MeshTriangulation(std::vector<Point<int, 2>> &&pt)
-    : points_(std::move(pt))
+        : points_(std::move(pt))
 {
 }
 
-inline MeshTriangulation::MeshTriangulation(std::initializer_list<Point<int, 2>> &&pt)
-    : points_(std::move(pt))
+MeshTriangulation::MeshTriangulation(std::initializer_list<Point<int, 2>> && lst)
+        : points_(lst)
 {
 }
 
-inline MeshTriangulation::~MeshTriangulation()
-{
-}
+inline MeshTriangulation::~MeshTriangulation() = default;
 
 inline void MeshTriangulation::triangulateDelaunay()
 {
@@ -87,7 +92,7 @@ inline void MeshTriangulation::triangulateDelaunay()
     boost::polygon::voronoi_diagram<double> vd;
     boost::polygon::construct_voronoi(points_.begin(), points_.end(), &vd);
 
-    for (const auto &vertex : vd.vertices())
+    for (const auto &vertex: vd.vertices())
     {
         const boost::polygon::voronoi_edge<double> *base_edge = vertex.incident_edge();
 
@@ -130,32 +135,32 @@ inline void MeshTriangulation::flipEdge(const LineCell &l)
 
     const LineCell &l_flip = flippable_.at(l);
 
-    lines_.insert(std::move(l_flip));
-    TriangleCell t1_flip(l.a, l_flip.a, l_flip.b);
-    TriangleCell t2_flip(l.b, l_flip.a, l_flip.b);
-    triangles_.insert(std::move(t1_flip));
-    triangles_.insert(std::move(t2_flip));
+    lines_.insert(l_flip);
+    TriangleCell t1_flip(l_flip.a, l_flip.b, l.a);
+    TriangleCell t2_flip(l_flip.a, l_flip.b, l.b);
+    triangles_.insert(t1_flip);
+    triangles_.insert(t2_flip);
 
-    std::set<TriangleCell> t_pair{std::move(t1_flip), std::move(t2_flip)};
-    edgeTrigAdj_.insert({std::move(l_flip), std::move(t_pair)});
-
-    flippable_.insert({std::move(l_flip), std::move(l)});
+    std::set < TriangleCell > t_pair{t1_flip, t2_flip};
+    edgeTrigAdj_.insert({l_flip, t_pair});
 
     std::vector<LineCell> bd_edges{
-        LineCell(l.a, l_flip.a), LineCell(l.a, l_flip.b),
-        LineCell(l.b, l_flip.a), LineCell(l.b, l_flip.b)};
+            LineCell(l.a, l_flip.a), LineCell(l.a, l_flip.b),
+            LineCell(l_flip.a, l.b), LineCell(l.b, l_flip.b)};
 
-    for (const auto &t : edgeTrigAdj_.at(l))
+    flippable_.insert({l_flip, l});
+
+    for (const auto &t: edgeTrigAdj_.at(l))
         triangles_.erase(t);
     edgeTrigAdj_.erase(l);
     lines_.erase(l);
     flippable_.erase(l);
 
-    for (const auto &e : bd_edges)
+    for (const auto &e: bd_edges)
         computeConnectivity_(e);
 }
 
-inline const double MeshTriangulation::triangleArea(const TriangleCell &t) const
+inline double MeshTriangulation::triangleArea(const TriangleCell &t) const
 {
     double s1, s2, s3;
 
@@ -166,7 +171,7 @@ inline const double MeshTriangulation::triangleArea(const TriangleCell &t) const
     return sqrt((s1 + s2 + s3) * (-s1 + s2 + s3) * (s1 - s2 + s3) * (s1 + s2 - s3)) / 4;
 }
 
-inline const bool MeshTriangulation::collinear(std::size_t i1, std::size_t i2, std::size_t i3) const
+inline bool MeshTriangulation::collinear(std::size_t i1, std::size_t i2, std::size_t i3) const
 {
     int dx1, dy1, dx2, dy2;
     dx1 = points_[i2][0] - points_[i1][0];
@@ -174,12 +179,6 @@ inline const bool MeshTriangulation::collinear(std::size_t i1, std::size_t i2, s
     dx2 = points_[i3][0] - points_[i1][0];
     dy2 = points_[i3][1] - points_[i1][1];
     return dx1 * dy2 == dx2 * dy1;
-}
-
-inline const std::vector<Point<int, 2>> &
-MeshTriangulation::points() const
-{
-    return this->points_;
 }
 
 inline const std::set<LineCell> &
@@ -194,11 +193,11 @@ MeshTriangulation::triangles() const
     return this->triangles_;
 }
 
-const std::string MeshTriangulation::wkt() const
+std::string MeshTriangulation::wkt() const
 {
     std::ostringstream oss;
     oss << "MULTIPOLYGON(";
-    for (const auto &t : triangles())
+    for (const auto &t: triangles())
     {
         oss << "(";
         oss << points_[t.a].wkt() << ",";
@@ -227,12 +226,12 @@ void MeshTriangulation::computeConnectivity_(const LineCell &l)
         edgeTrigAdj_.at(l).clear();
     flippable_.erase(l);
 
-    std::set<std::size_t> eg_flip{};
-    for (const TriangleCell &t : triangles())
+    std::set < std::size_t > eg_flip{};
+    for (const TriangleCell &t: triangles())
     {
         if (t.contains(l))
         {
-            edgeTrigAdj_[l].insert(std::move(t));
+            edgeTrigAdj_[l].insert(t);
             eg_flip.merge(t.difference(l));
         }
     }
@@ -243,18 +242,18 @@ void MeshTriangulation::computeConnectivity_(const LineCell &l)
     LineCell l_flip(eg_flip);
 
     if (boost::math::epsilon_difference(
-            triangleArea(TriangleCell(l.a, l_flip.a, l_flip.b)),
-            triangleArea(TriangleCell(l.b, l_flip.a, l_flip.b))) > 3.0)
+            triangleArea(TriangleCell(l_flip.a, l_flip.b, l.a)),
+            triangleArea(TriangleCell(l_flip.a, l_flip.b, l.b))) > 3.0)
         return;
 
     if (collinear(l_flip.a, l.a, l.b) || collinear(l_flip.b, l.a, l.b))
         return;
 
-    flippable_.insert({std::move(l), std::move(l_flip)});
+    flippable_.insert({l, l_flip});
 }
 
 void MeshTriangulation::computeConnectivity_()
 {
-    for (const LineCell &l : lines())
+    for (const LineCell &l: lines())
         computeConnectivity_(l);
 }
