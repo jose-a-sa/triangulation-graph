@@ -40,15 +40,11 @@ public:
 
     MeshTriangulation(std::initializer_list<Point<int, 2>> &&lst);
 
-    ~MeshTriangulation();
+    ~MeshTriangulation() = default;
 
     void triangulateDelaunay();
 
     void flipEdge(const LineCell &l);
-
-    double triangleArea(const TriangleCell &t) const;
-
-    bool collinear(std::size_t i1, std::size_t i2, std::size_t i3) const;
 
     const std::set<LineCell> &lines() const;
 
@@ -70,6 +66,10 @@ private:
     void computeConnectivity_();
 
     void computeConnectivity_(const LineCell &l);
+
+    double triangleArea_(const TriangleCell &t) const;
+
+    bool collinear_(std::size_t i1, std::size_t i2, std::size_t i3) const;
 };
 
 inline MeshTriangulation::MeshTriangulation(std::vector<Point<int, 2>> &&pt)
@@ -77,12 +77,10 @@ inline MeshTriangulation::MeshTriangulation(std::vector<Point<int, 2>> &&pt)
 {
 }
 
-MeshTriangulation::MeshTriangulation(std::initializer_list<Point<int, 2>> && lst)
+MeshTriangulation::MeshTriangulation(std::initializer_list<Point<int, 2>> &&lst)
         : points_(lst)
 {
 }
-
-inline MeshTriangulation::~MeshTriangulation() = default;
 
 inline void MeshTriangulation::triangulateDelaunay()
 {
@@ -160,7 +158,7 @@ inline void MeshTriangulation::flipEdge(const LineCell &l)
         computeConnectivity_(e);
 }
 
-inline double MeshTriangulation::triangleArea(const TriangleCell &t) const
+inline double MeshTriangulation::triangleArea_(const TriangleCell &t) const
 {
     double s1, s2, s3;
 
@@ -171,7 +169,7 @@ inline double MeshTriangulation::triangleArea(const TriangleCell &t) const
     return sqrt((s1 + s2 + s3) * (-s1 + s2 + s3) * (s1 - s2 + s3) * (s1 + s2 - s3)) / 4;
 }
 
-inline bool MeshTriangulation::collinear(std::size_t i1, std::size_t i2, std::size_t i3) const
+inline bool MeshTriangulation::collinear_(std::size_t i1, std::size_t i2, std::size_t i3) const
 {
     int dx1, dy1, dx2, dy2;
     dx1 = points_[i2][0] - points_[i1][0];
@@ -181,14 +179,12 @@ inline bool MeshTriangulation::collinear(std::size_t i1, std::size_t i2, std::si
     return dx1 * dy2 == dx2 * dy1;
 }
 
-inline const std::set<LineCell> &
-MeshTriangulation::lines() const
+inline const std::set<LineCell> & MeshTriangulation::lines() const
 {
     return this->lines_;
 }
 
-inline const std::set<TriangleCell> &
-MeshTriangulation::triangles() const
+inline const std::set<TriangleCell> & MeshTriangulation::triangles() const
 {
     return this->triangles_;
 }
@@ -242,11 +238,11 @@ void MeshTriangulation::computeConnectivity_(const LineCell &l)
     LineCell l_flip(eg_flip);
 
     if (boost::math::epsilon_difference(
-            triangleArea(TriangleCell(l_flip.a, l_flip.b, l.a)),
-            triangleArea(TriangleCell(l_flip.a, l_flip.b, l.b))) > 3.0)
+            triangleArea_(TriangleCell(l_flip.a, l_flip.b, l.a)),
+            triangleArea_(TriangleCell(l_flip.a, l_flip.b, l.b))) > 3.0)
         return;
 
-    if (collinear(l_flip.a, l.a, l.b) || collinear(l_flip.b, l.a, l.b))
+    if (collinear_(l_flip.a, l.a, l.b) || collinear_(l_flip.b, l.a, l.b))
         return;
 
     flippable_.insert({l, l_flip});
