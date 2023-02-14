@@ -13,35 +13,20 @@ class Point : public std::array<T, D>
 {
 public:
     using ValueType = T;
-
     Point() = default;
-
     explicit Point(ValueType x);
-
     Point(const Point<ValueType, D> &pt) = default;
-
     Point(std::initializer_list<ValueType> &&v);
-
     ~Point() = default;
-
     Point<ValueType, D> &operator+=(const Point<ValueType, D> &rhs);
-
     Point<ValueType, D> &operator-=(const Point<ValueType, D> &rhs);
-
     Point<ValueType, D> &operator*=(const ValueType &rhs);
-
     const Point<ValueType, D> &operator+(const Point<ValueType, D> &rhs) const;
-
     const Point<ValueType, D> &operator-(const Point<ValueType, D> &rhs) const;
-
     const Point<ValueType, D> &operator*(const ValueType &rhs) const;
-
     std::string toString() const;
-
     std::string wkt() const;
-
     T distance_sq(const Point<ValueType, D> &to) const;
-
     double distance(const Point<ValueType, D> &to) const;
 };
 
