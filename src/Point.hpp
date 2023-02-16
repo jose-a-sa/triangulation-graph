@@ -12,151 +12,158 @@ template<typename T, std::size_t D>
 class Point : public std::array<T, D>
 {
 public:
-    using ValueType = T;
-    Point() = default;
-    explicit Point(ValueType x);
-    Point(const Point<ValueType, D> &pt) = default;
-    Point(std::initializer_list<ValueType> &&v);
-    ~Point() = default;
-    Point<ValueType, D> &operator+=(const Point<ValueType, D> &rhs);
-    Point<ValueType, D> &operator-=(const Point<ValueType, D> &rhs);
-    Point<ValueType, D> &operator*=(const ValueType &rhs);
-    const Point<ValueType, D> &operator+(const Point<ValueType, D> &rhs) const;
-    const Point<ValueType, D> &operator-(const Point<ValueType, D> &rhs) const;
-    const Point<ValueType, D> &operator*(const ValueType &rhs) const;
-    std::string toString() const;
-    std::string wkt() const;
-    T distance_sq(const Point<ValueType, D> &to) const;
-    double distance(const Point<ValueType, D> &to) const;
+	using ValueType = T;
+	Point();
+	explicit Point(ValueType x);
+	Point(std::initializer_list<ValueType>&& v);
+	~Point();
+	Point<ValueType, D>& operator+=(const Point<ValueType, D>& rhs);
+	Point<ValueType, D>& operator-=(const Point<ValueType, D>& rhs);
+	Point<ValueType, D>& operator*=(const ValueType& rhs);
+	const Point<ValueType, D>& operator+(const Point<ValueType, D>& rhs) const;
+	const Point<ValueType, D>& operator-(const Point<ValueType, D>& rhs) const;
+	const Point<ValueType, D>& operator*(const ValueType& rhs) const;
+	std::string toString() const;
+	std::string WKT() const;
+	T distanceSq(const Point<ValueType, D>& to) const;
+	double distance(const Point<ValueType, D>& to) const;
 };
+
+template<typename T, std::size_t D>
+Point<T, D>::Point() = default;
 
 template<typename T, std::size_t D>
 inline Point<T, D>::Point(T x)
 {
-    this->fill(x);
+	this->fill(x);
 }
 
 template<typename T, std::size_t D>
-inline Point<T, D>::Point(std::initializer_list<T> &&v)
+Point<T, D>::Point(std::initializer_list<T>&& v)
 {
-    std::size_t i = 0;
-    for (const T &elem: v)
-    {
-        (*this)[i++] = elem;
-        if (i >= D)
-            break;
-    }
+	std::size_t i = 0;
+	for (const T& elem : v)
+	{
+		(*this)[i++] = elem;
+		if (i >= D)
+			break;
+	}
 }
 
 template<typename T, std::size_t D>
-inline Point<T, D> &Point<T, D>::operator+=(const Point<T, D> &rhs)
+Point<T, D>::~Point() = default;
+
+template<typename T, std::size_t D>
+Point<T, D>& Point<T, D>::operator+=(const Point<T, D>& rhs)
 {
-    std::transform(this->begin(), this->end(), rhs.begin(),
-                   this->begin(), std::plus<T>());
-    return *this;
+	std::transform(this->begin(), this->end(), rhs.begin(),
+		this->begin(), std::plus<T>());
+	return *this;
 }
 
 template<typename T, std::size_t D>
-inline Point<T, D> &Point<T, D>::operator-=(const Point<T, D> &rhs)
+Point<T, D>& Point<T, D>::operator-=(const Point<T, D>& rhs)
 {
-    std::transform(this->begin(), this->end(), rhs.begin(),
-                   this->begin(), std::minus<T>());
-    return *this;
+	std::transform(this->begin(), this->end(), rhs.begin(),
+		this->begin(), std::minus<T>());
+	return *this;
 }
 
 template<typename T, std::size_t D>
-inline Point<T, D> &Point<T, D>::operator*=(const T &rhs)
+Point<T, D>& Point<T, D>::operator*=(const T& rhs)
 {
-    std::transform(
-            this->begin(), this->end(), this->begin(),
-            [&](const T &x) -> T
-            {
-                return x * rhs;
-            });
-    return *this;
+	std::transform(this->begin(), this->end(), this->begin(),
+		[&](const T& x) -> T
+		{
+			return x * rhs;
+		});
+	return *this;
 }
 
 template<typename T, std::size_t D>
-inline const Point<T, D> &Point<T, D>::operator+(const Point<T, D> &rhs) const
+inline const Point<T, D>& Point<T, D>::operator+(const Point<T, D>& rhs) const
 {
-    return Point<T, D>(*this) += rhs;
+	return Point<T, D>(*this) += rhs;
 }
 
 template<typename T, std::size_t D>
-inline const Point<T, D> &Point<T, D>::operator-(const Point<T, D> &rhs) const
+inline const Point<T, D>& Point<T, D>::operator-(const Point<T, D>& rhs) const
 {
-    return Point<T, D>(*this) -= rhs;
+	return Point<T, D>(*this) -= rhs;
 }
 
 template<typename T, std::size_t D>
 inline std::string Point<T, D>::toString() const
 {
-    std::ostringstream oss;
-    oss << "{";
-    typename Point<T, D>::const_iterator it;
-    for (const auto &x: *this)
-    {
-        oss << (x >= 0 ? " " : "") << *it;
-        oss << (x != this->back() ? "," : "}");
-    }
-    return oss.str();
+	std::ostringstream oss;
+	oss << "{";
+	typename Point<T, D>::const_iterator it;
+	for (const auto& x : *this)
+	{
+		oss << (x >= 0 ? " " : "") << *it;
+		oss << (x != this->back() ? "," : "}");
+	}
+	return oss.str();
 }
 
 template<typename T, std::size_t D>
-inline std::string Point<T, D>::wkt() const
+inline std::string Point<T, D>::WKT() const
 {
-    std::ostringstream res;
-    typename Point<T, D>::const_iterator it;
-    for (it = this->cbegin(); it != std::prev(this->cend()); it++)
-    {
-        res << *it << " ";
-    }
-    res << *it;
-    return res.str();
+	std::ostringstream res;
+	typename Point<T, D>::const_iterator it;
+	for (it = this->cbegin(); it != std::prev(this->cend()); it++)
+	{
+		res << *it << " ";
+	}
+	res << *it;
+	return res.str();
 }
 
 template<typename T, std::size_t D>
-inline T Point<T, D>::distance_sq(const Point<ValueType, D> &to) const
+inline T Point<T, D>::distanceSq(const Point<ValueType, D>& to) const
 {
-    T res = 0;
-    for (std::size_t i = 0; i < D; i++)
-        res += ((*this)[i] - to[i]) * ((*this)[i] - to[i]);
-    return res;
+	T res = 0;
+	for (std::size_t i = 0; i < D; i++)
+	{
+		T diff = (*this)[i] - to[i];
+		res += diff * diff;
+	}
+	return res;
 }
 
 template<typename T, std::size_t D>
-inline double Point<T, D>::distance(const Point<ValueType, D> &to) const
+inline double Point<T, D>::distance(const Point<ValueType, D>& to) const
 {
-    return std::sqrt(this->distance_sq(to));
+	return std::sqrt(this->distanceSq(to));
 }
 
 template<typename T, std::size_t D>
-inline const Point<T, D> &Point<T, D>::operator*(const T &rhs) const
+inline const Point<T, D>& Point<T, D>::operator*(const T& rhs) const
 {
-    return Point<T, D>(*this) *= rhs;
+	return Point<T, D>(*this) *= rhs;
 }
 
 template<typename T, std::size_t D>
-const Point<T, D> &operator*(const T &lhs, const Point<T, D> &rhs)
+const Point<T, D>& operator*(const T& lhs, const Point<T, D>& rhs)
 {
-    return Point<T, D>(*rhs) *= lhs;
+	return Point<T, D>(*rhs) *= lhs;
 }
 
 template<typename T, std::size_t D>
-std::ostream &operator<<(std::ostream &stream, const Point<T, D> &pt)
+std::ostream& operator<<(std::ostream& stream, const Point<T, D>& pt)
 {
-    return stream << pt.toString();
+	return stream << pt.toString();
 }
 
 template<typename T, std::size_t D>
 struct std::hash<Point<T, D>>
 {
-    std::size_t operator()(const Point<T, D> &pt) const noexcept
-    {
-        std::size_t seed = 0;
-        std::hash<T> hash{};
-        for (const T &c: pt)
-            seed ^= hash(c) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-        return seed; // or use boost::hash_combine
-    }
+	std::size_t operator()(const Point<T, D>& pt) const noexcept
+	{
+		std::size_t seed = 0;
+		std::hash<T> hash{};
+		for (const T& c : pt)
+			seed ^= hash(c) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+		return seed; // or use boost::hash_combine
+	}
 };

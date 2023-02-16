@@ -5,36 +5,30 @@
 TriangulationFlipGraph::TriangulationFlipGraph(const std::vector<Point<int, 2>>& pts)
 	: parentMesh_(pts)
 {
+	parentMesh_.triangulateDelaunay();
+	vertices_.insert(parentMesh_);
 }
 
 TriangulationFlipGraph::TriangulationFlipGraph(std::vector<Point<int, 2>>&& pts)
 	: parentMesh_(std::move(pts))
 {
+	parentMesh_.triangulateDelaunay();
+	vertices_.insert(parentMesh_);
 }
 
 void TriangulationFlipGraph::generateGraph()
 {
-	parentMesh_.triangulateDelaunay();
-	vertices_.insert(std::move(parentMesh_));
-
 	std::stack<MeshTriangulation> bfs;
 	bfs.push(parentMesh_);
 
-	const std::size_t MAX_ITER = 10;
-	std::size_t i = 0;
-
-	while (i++ < MAX_ITER && !bfs.empty())
+	while (!bfs.empty())
 	{
-		std::cout << std::string(120, '-') << '\n';
-		std::size_t n = bfs.size();
-		while (n--)
+		std::size_t levelSize = bfs.size();
+		while (levelSize--)
 		{
-			const MeshTriangulation &curr = bfs.top();
+			const MeshTriangulation& curr = bfs.top();
 
-			std::cout << &curr << ": \t" << curr.wkt() << " \t";
-			std::cout << boost::hash<MeshTriangulation>()(curr) << '\n';
-
-			for (const auto& [l,lf] : curr.flippableLines())
+			for (const auto& [l, lf] : curr.flippableLines())
 			{
 				MeshTriangulation currFlipped(curr);
 				currFlipped.flipEdge(l);
@@ -43,8 +37,7 @@ void TriangulationFlipGraph::generateGraph()
 
 				if (foundMesh_it != vertices_.end())
 				{
-					const MeshTriangulation& foundMesh = *foundMesh_it;
-					adj_[curr].insert(foundMesh);
+					adj_[curr].insert(*foundMesh_it);
 					continue;
 				}
 
@@ -58,7 +51,8 @@ void TriangulationFlipGraph::generateGraph()
 	}
 }
 
-const std::unordered_set<MeshTriangulation>& TriangulationFlipGraph::vertices() const
+const std::unordered_set<MeshTriangulation>&
+TriangulationFlipGraph::vertices() const
 {
 	return vertices_;
 }

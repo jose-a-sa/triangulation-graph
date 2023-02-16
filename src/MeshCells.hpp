@@ -13,19 +13,15 @@ public:
 	std::size_t a, b;
 
 	LineCell();
-
 	explicit LineCell(std::size_t a, std::size_t b);
-
 	LineCell(const LineCell& l);
-
-	explicit LineCell(const std::set<std::size_t>& st);
-
 	~LineCell();
 
+	void insert(std::size_t i);
+	std::size_t size() const;
+
 	bool operator<(const LineCell& rhs) const;
-
 	bool operator==(const LineCell& rhs) const;
-
 	bool operator!=(const LineCell& rhs) const;
 
 	friend std::size_t hash_value(const LineCell& l);
@@ -37,24 +33,18 @@ public:
 	std::size_t a, b, c;
 
 	TriangleCell();
-
 	explicit TriangleCell(std::size_t a, std::size_t b, std::size_t c);
-
 	TriangleCell(const TriangleCell& t);
-
-	explicit TriangleCell(const std::set<std::size_t>& st);
-
 	~TriangleCell();
 
+	void insert(std::size_t i);
+	std::size_t size() const;
+
 	bool operator<(const TriangleCell& rhs) const;
-
 	bool operator==(const TriangleCell& rhs) const;
-
 	bool operator!=(const TriangleCell& rhs) const;
 
-	bool contains(const LineCell& l) const;
-
-	std::set<std::size_t> difference(const LineCell& l) const;
+	std::size_t otherPoint(const LineCell& l) const;
 
 	friend std::size_t hash_value(const TriangleCell& l);
 };

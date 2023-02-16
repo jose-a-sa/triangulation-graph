@@ -6,25 +6,42 @@
 #include <iostream>
 
 
-LineCell::LineCell() = default;
+LineCell::LineCell()
+	: a(-1), b(-1)
+{
+}
 
 LineCell::LineCell(std::size_t a, std::size_t b)
-	: a(a < b ? a : b), b(a < b ? b : a)
+	: a(-1), b(-1)
 {
+	this->insert(a);
+	this->insert(b);
 }
 
 LineCell::LineCell(const LineCell& l) = default;
 
-LineCell::LineCell(const std::set<std::size_t>& st)
+LineCell::~LineCell() = default;
+
+void LineCell::insert(std::size_t i)
 {
-	BOOST_ASSERT_MSG(st.size() >= 2,
-		"std::set<std::size_t> initializer is not size 2, in LineCell::LineCell");
-	auto it = st.begin();
-	a = *(it++);
-	b = *(it++);
+	if (this->a == i || this->b == i)
+		return;
+
+	if (this->a == -1)
+		this->a = i;
+	else if (this->b == -1)
+		this->b = i;
+
+	if (this->a > this->b) std::swap(this->a, this->b);
 }
 
-LineCell::~LineCell() = default;
+std::size_t LineCell::size() const
+{
+	std::size_t sz = 0;
+	if (this->a != -1) sz++;
+	if (this->b != -1) sz++;
+	return sz;
+}
 
 bool LineCell::operator<(const LineCell& rhs) const
 {
@@ -41,33 +58,48 @@ bool LineCell::operator!=(const LineCell& rhs) const
 	return !this->operator==(rhs);
 }
 
-TriangleCell::TriangleCell() = default;
+TriangleCell::TriangleCell()
+	: a(-1), b(-1), c(-1)
+{
+}
 
 TriangleCell::TriangleCell(std::size_t a, std::size_t b, std::size_t c)
+	: a(-1), b(-1), c(-1)
 {
-	if (a > b)
-		std::swap(a, b);
-	if (b > c)
-		std::swap(b, c);
-	if (a > b)
-		std::swap(a, b);
-
-	this->a = a, this->b = b, this->c = c;
+	this->insert(a);
+	this->insert(b);
+	this->insert(c);
 }
 
 TriangleCell::TriangleCell(const TriangleCell& t) = default;
 
-TriangleCell::TriangleCell(const std::set<std::size_t>& st)
+TriangleCell::~TriangleCell() = default;
+
+void TriangleCell::insert(std::size_t i)
 {
-	BOOST_ASSERT_MSG(st.size() >= 3,
-		"std::set<std::size_t> initializer is not size 2, in LineCell::LineCell");
-	auto it = st.begin();
-	a = *(it++);
-	b = *(it++);
-	c = *(it++);
+	if (this->a == i || this->b == i || this->c == i)
+		return;
+
+	if (this->a == -1)
+		this->a = i;
+	else if (this->b == -1)
+		this->b = i;
+	else if (this->c == -1)
+		this->c = i;
+
+	if (this->a > this->b) std::swap(this->a, this->b);
+	if (this->b > this->c) std::swap(this->b, this->c);
+	if (this->a > this->b) std::swap(this->a, this->b);
 }
 
-TriangleCell::~TriangleCell() = default;
+std::size_t TriangleCell::size() const
+{
+	std::size_t sz = 0;
+	if (this->a != -1) sz++;
+	if (this->b != -1) sz++;
+	if (this->c != -1) sz++;
+	return sz;
+}
 
 bool TriangleCell::operator<(const TriangleCell& rhs) const
 {
@@ -89,23 +121,22 @@ bool TriangleCell::operator!=(const TriangleCell& rhs) const
 	return !this->operator==(rhs);
 }
 
-std::set<std::size_t> TriangleCell::difference(const LineCell& l) const
+std::size_t TriangleCell::otherPoint(const LineCell& l) const
 {
-	std::set<std::size_t> res;
-	if (this->a != l.a && this->a != l.b)
-		res.insert(this->a);
-	if (this->b != l.a && this->b != l.b)
-		res.insert(this->b);
-	if (this->c != l.a && this->c != l.b)
-		res.insert(this->c);
-	return res;
-}
+	if (l.size() < 2 || this->size() < 3)
+		return -1;
 
-bool TriangleCell::contains(const LineCell& l) const
-{
 	if (this->a == l.a)
-		return this->b == l.b || this->c == l.b;
-	return this->b == l.a && this->c == l.b;
+	{
+		if (this->b == l.b)
+			return this->c;
+		if (this->c == l.b)
+			return this->b;
+	}
+	else if (this->b == l.a && this->c == l.b)
+		return this->a;
+
+	return -1;
 }
 
 std::ostream& operator<<(std::ostream& out, const LineCell& l)

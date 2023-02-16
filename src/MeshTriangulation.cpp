@@ -102,14 +102,14 @@ void MeshTriangulation::flipEdge(const LineCell& l)
 	triangles_.insert(t1_flip);
 	triangles_.insert(t2_flip);
 
-	std::set < TriangleCell > t_pair{ t1_flip, t2_flip };
+	std::set < TriangleCell > t_pair{t1_flip, t2_flip};
 	edgeTrigAdj_[l_flip] = std::move(t_pair);
 
 	std::vector<LineCell> bd_edges{
 		LineCell(l.a, l_flip.a), LineCell(l.a, l_flip.b),
-		LineCell(l_flip.a, l.b), LineCell(l.b, l_flip.b) };
+		LineCell(l_flip.a, l.b), LineCell(l.b, l_flip.b)};
 
-	flippable_.insert({ l_flip, l });
+	flippable_.insert({l_flip, l});
 
 	for (const auto& t : edgeTrigAdj_.at(l))
 		triangles_.erase(t);
@@ -121,25 +121,28 @@ void MeshTriangulation::flipEdge(const LineCell& l)
 		computeConnectivity_(e);
 }
 
-inline double MeshTriangulation::triangleArea_(const TriangleCell& t) const
+inline double MeshTriangulation::triangleArea_(std::size_t a, std::size_t b, std::size_t c) const
 {
 	double s1, s2, s3;
 
-	s1 = points_[t.a].distance(points_[t.b]);
-	s2 = points_[t.a].distance(points_[t.c]);
-	s3 = points_[t.b].distance(points_[t.c]);
+	s1 = points_[a].distance(points_[b]);
+	s2 = points_[a].distance(points_[c]);
+	s3 = points_[b].distance(points_[c]);
 
 	return sqrt((s1 + s2 + s3) * (-s1 + s2 + s3) * (s1 - s2 + s3) * (s1 + s2 - s3)) / 4;
 }
 
-inline bool MeshTriangulation::collinear_(std::size_t i1, std::size_t i2, std::size_t i3) const
+inline bool MeshTriangulation::convexPolygon_(std::size_t i, std::size_t j, std::size_t k, std::size_t l) const
 {
-	int dx1, dy1, dx2, dy2;
-	dx1 = points_[i2][0] - points_[i1][0];
-	dy1 = points_[i2][1] - points_[i1][1];
-	dx2 = points_[i3][0] - points_[i1][0];
-	dy2 = points_[i3][1] - points_[i1][1];
-	return dx1 * dy2 == dx2 * dy1;
+	double t1, t2, t1_f, t2_f;
+	t1 = triangleArea_(i, j, k), t2 = triangleArea_(k, l, i);
+	t1_f = triangleArea_(j, k, l), t2_f = triangleArea_(l, i, j);
+
+	return boost::math::epsilon_difference(t1, 0) > 3.0 &&
+		boost::math::epsilon_difference(t2, 0) > 3.0 &&
+		boost::math::epsilon_difference(t1_f, 0) > 3.0 &&
+		boost::math::epsilon_difference(t2_f, 0) > 3.0 &&
+		boost::math::epsilon_difference(t1 + t2, t1_f + t2_f) < 3.0;
 }
 
 const std::set<LineCell>& MeshTriangulation::lines() const
@@ -164,9 +167,9 @@ std::string MeshTriangulation::wkt() const
 	for (const auto& t : triangles())
 	{
 		oss << "(";
-		oss << points_[t.a].wkt() << ",";
-		oss << points_[t.b].wkt() << ",";
-		oss << points_[t.c].wkt();
+		oss << points_[t.a].WKT() << ",";
+		oss << points_[t.b].WKT() << ",";
+		oss << points_[t.c].WKT();
 		oss << (t != *std::prev(triangles().end()) ? "), " : ")");
 	}
 	oss << ")";
@@ -184,30 +187,24 @@ void MeshTriangulation::computeConnectivity_(const LineCell& l)
 		edgeTrigAdj_.at(l).clear();
 	flippable_.erase(l);
 
-	std::set < std::size_t > eg_flip{};
+	LineCell l_flip;
 	for (const TriangleCell& t : triangles())
 	{
-		if (t.contains(l))
+		std::size_t o = t.otherPoint(l);
+		if (o != -1)
 		{
 			edgeTrigAdj_[l].insert(t);
-			eg_flip.merge(t.difference(l));
+			l_flip.insert(o);
 		}
 	}
 
-	if (eg_flip.size() != 2)
+	if (l_flip.size() != 2)
 		return;
 
-	LineCell l_flip(eg_flip);
-
-	if (boost::math::epsilon_difference(
-		triangleArea_(TriangleCell(l_flip.a, l_flip.b, l.a)),
-		triangleArea_(TriangleCell(l_flip.a, l_flip.b, l.b))) > 3.0)
+	if (!convexPolygon_(l.a, l_flip.a, l.b, l_flip.b))
 		return;
 
-	if (collinear_(l_flip.a, l.a, l.b) || collinear_(l_flip.b, l.a, l.b))
-		return;
-
-	flippable_.insert({ l, l_flip });
+	flippable_.insert({l, l_flip});
 }
 
 void MeshTriangulation::computeConnectivity_()

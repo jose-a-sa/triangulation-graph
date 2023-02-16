@@ -52,9 +52,9 @@ private:
 
 	void computeConnectivity_(const LineCell& l);
 
-	double triangleArea_(const TriangleCell& t) const;
+	double triangleArea_(std::size_t a, std::size_t b, std::size_t c) const;
 
-	bool collinear_(std::size_t i1, std::size_t i2, std::size_t i3) const;
+	bool convexPolygon_(std::size_t i, std::size_t j, std::size_t k, std::size_t l) const;
 };
 
 template<>
