@@ -4,8 +4,6 @@
 #include <boost/functional/hash.hpp>
 #include <functional>
 #include <iostream>
-#include <set>
-#include <utility>
 
 class LineCell
 {

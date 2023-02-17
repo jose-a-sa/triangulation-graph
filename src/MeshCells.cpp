@@ -1,11 +1,5 @@
 #include "MeshCells.hpp"
 
-#include <boost/assert.hpp>
-#include <set>
-#include <utility>
-#include <iostream>
-
-
 LineCell::LineCell()
 	: a(-1), b(-1)
 {

@@ -8,42 +8,52 @@
 namespace boost::polygon
 {
 	template<>
-	struct geometry_concept<Point<double, 2>>
+	struct geometry_concept<Point>
 	{
 		typedef point_concept type;
 	};
 
 	template<>
-	struct point_traits<Point<double, 2>>
+	struct point_traits<Point>
 	{
 		typedef double coordinate_type;
 
 		static inline coordinate_type
-		get(const Point<double, 2>& point, const orientation_2d& orient)
+		get(const Point& point, const orientation_2d& orient)
 		{
-			return (orient == HORIZONTAL) ? point[0] : point[1];
+			return (orient == HORIZONTAL) ? point.x : point.y;
 		}
 	};
 }
 
 MeshTriangulation::MeshTriangulation(const MeshTriangulation& mesh) = default;
 
-MeshTriangulation::MeshTriangulation(const std::vector<Point<double, 2>>& pt)
+MeshTriangulation::MeshTriangulation(const std::vector<Point>& pt)
 	: coord_(pt)
 {
+	init_();
 }
 
-MeshTriangulation::MeshTriangulation(std::vector<Point<double, 2>>&& pt)
+MeshTriangulation::MeshTriangulation(std::vector<Point>&& pt)
 	: coord_(std::move(pt))
 {
+	init_();
 }
 
-MeshTriangulation::MeshTriangulation(std::initializer_list<Point<double, 2>>&& lst)
+MeshTriangulation::MeshTriangulation(std::initializer_list<Point>&& lst)
 	: coord_(lst)
 {
+	init_();
 }
 
 MeshTriangulation::~MeshTriangulation() = default;
+
+void MeshTriangulation::init_()
+{
+	this->coordMeshHash_ = 0;
+	for (const auto& p : this->coordinates())
+		boost::hash_combine(this->coordMeshHash_, boost::hash<Point>()(p));
+}
 
 void MeshTriangulation::triangulateDelaunay()
 {
@@ -51,7 +61,7 @@ void MeshTriangulation::triangulateDelaunay()
 	triangles_.clear();
 
 	boost::polygon::voronoi_diagram<double> vd;
-	boost::polygon::construct_voronoi(coord_.begin(), coord_.end(), &vd);
+	boost::polygon::construct_voronoi(coordinates().begin(), coordinates().end(), &vd);
 
 	for (const auto& vertex : vd.vertices())
 	{
@@ -86,7 +96,7 @@ void MeshTriangulation::triangulateDelaunay()
 	computeConnectivity_();
 }
 
-void MeshTriangulation::flipEdge(const LineCell& l)
+void MeshTriangulation::flipLine(const LineCell& l)
 {
 	if (!edgeTrigAdj_.count(l))
 		return;
@@ -94,22 +104,16 @@ void MeshTriangulation::flipEdge(const LineCell& l)
 	if (!flippable_.count(l))
 		return;
 
-	const LineCell& l_flip = flippable_.at(l);
-
-	lines_.insert(l_flip);
+	LineCell l_flip = flippable_.at(l);
 	TriangleCell t1_flip(l_flip.a, l_flip.b, l.a);
 	TriangleCell t2_flip(l_flip.a, l_flip.b, l.b);
+
+	lines_.insert(l_flip);
 	triangles_.insert(t1_flip);
 	triangles_.insert(t2_flip);
 
-	std::set < TriangleCell > t_pair{t1_flip, t2_flip};
-	edgeTrigAdj_[l_flip] = std::move(t_pair);
-
-	std::vector<LineCell> bd_edges{
-		LineCell(l.a, l_flip.a), LineCell(l.a, l_flip.b),
-		LineCell(l_flip.a, l.b), LineCell(l.b, l_flip.b)};
-
-	flippable_.insert({l_flip, l});
+	edgeTrigAdj_[l_flip] = { t1_flip, t2_flip };
+	flippable_.insert({ l_flip, l });
 
 	for (const auto& t : edgeTrigAdj_.at(l))
 		triangles_.erase(t);
@@ -117,8 +121,10 @@ void MeshTriangulation::flipEdge(const LineCell& l)
 	lines_.erase(l);
 	flippable_.erase(l);
 
-	for (const auto& e : bd_edges)
-		computeConnectivity_(e);
+	computeConnectivity_(LineCell(l.a, l_flip.a));
+	computeConnectivity_(LineCell(l.a, l_flip.b));
+	computeConnectivity_(LineCell(l_flip.a, l.b));
+	computeConnectivity_(LineCell(l.b, l_flip.b));
 }
 
 inline double MeshTriangulation::triangleArea_(std::size_t a, std::size_t b, std::size_t c) const
@@ -129,7 +135,7 @@ inline double MeshTriangulation::triangleArea_(std::size_t a, std::size_t b, std
 	s2 = coord_[a].distance(coord_[c]);
 	s3 = coord_[b].distance(coord_[c]);
 
-	return sqrt((s1 + s2 + s3) * (-s1 + s2 + s3) * (s1 - s2 + s3) * (s1 + s2 - s3)) / 4;
+	return 0.25L * sqrt((s1 + s2 + s3) * (-s1 + s2 + s3) * (s1 - s2 + s3) * (s1 + s2 - s3));
 }
 
 inline bool MeshTriangulation::convexPolygon_(std::size_t i, std::size_t j, std::size_t k, std::size_t l) const
@@ -167,9 +173,9 @@ std::string MeshTriangulation::wkt() const
 	for (const auto& t : triangles())
 	{
 		oss << "(";
-		oss << coord_[t.a].wtk() << ",";
-		oss << coord_[t.b].wtk() << ",";
-		oss << coord_[t.c].wtk();
+		oss << coord_[t.a].x << " " << coord_[t.a].y << ",";
+		oss << coord_[t.b].x << " " << coord_[t.b].y << ",";
+		oss << coord_[t.c].x << " " << coord_[t.c].y;
 		oss << (t != *std::prev(triangles().end()) ? "), " : ")");
 	}
 	oss << ")";
@@ -204,7 +210,7 @@ void MeshTriangulation::computeConnectivity_(const LineCell& l)
 	if (!convexPolygon_(l.a, l_flip.a, l.b, l_flip.b))
 		return;
 
-	flippable_.insert({l, l_flip});
+	flippable_.insert({ l, l_flip });
 }
 
 void MeshTriangulation::computeConnectivity_()
@@ -215,9 +221,8 @@ void MeshTriangulation::computeConnectivity_()
 
 std::size_t hash_value(const MeshTriangulation& mesh)
 {
-	std::size_t seed = 0;
-	for (const auto& p : mesh.coordinates())
-		boost::hash_combine(seed, boost::hash<Point<double, 2>>()(p));
+	std::size_t seed = mesh.coordMeshHash_;
+
 	for (const auto& t : mesh.triangles())
 		boost::hash_combine(seed, boost::hash<TriangleCell>()(t));
 	return seed;
@@ -228,7 +233,7 @@ bool MeshTriangulation::operator==(const MeshTriangulation& other) const
 	return hash_value(*this) == hash_value(other);
 }
 
-const std::vector<Point<double, 2>>& MeshTriangulation::coordinates() const
+const std::vector<Point>& MeshTriangulation::coordinates() const
 {
 	return coord_;
 }

@@ -14,6 +14,7 @@ find_package(Boost)
 
 # Source related variables
 set(SRC_FILES
+        src/Point.cpp
         src/MeshCells.cpp
         src/MeshTriangulation.cpp
         src/TriangulationFlipGraph.cpp
