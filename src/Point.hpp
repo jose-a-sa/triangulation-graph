@@ -24,7 +24,7 @@ public:
 	const Point<ValueType, D>& operator-(const Point<ValueType, D>& rhs) const;
 	const Point<ValueType, D>& operator*(const ValueType& rhs) const;
 	std::string toString() const;
-	std::string WKT() const;
+	std::string wtk() const;
 	T distanceSq(const Point<ValueType, D>& to) const;
 	double distance(const Point<ValueType, D>& to) const;
 };
@@ -97,26 +97,25 @@ inline std::string Point<T, D>::toString() const
 {
 	std::ostringstream oss;
 	oss << "{";
-	typename Point<T, D>::const_iterator it;
-	for (const auto& x : *this)
+	for (auto it = this->begin(); it != this->end(); it++)
 	{
-		oss << (x >= 0 ? " " : "") << *it;
-		oss << (x != this->back() ? "," : "}");
+		oss << (*it >= 0 &&  it != this->begin() ? " " : "");
+		oss << *it;
+		oss << (it != std::prev(this->end()) ? "," : "}");
 	}
 	return oss.str();
 }
 
 template<typename T, std::size_t D>
-inline std::string Point<T, D>::WKT() const
+inline std::string Point<T, D>::wtk() const
 {
-	std::ostringstream res;
-	typename Point<T, D>::const_iterator it;
-	for (it = this->cbegin(); it != std::prev(this->cend()); it++)
+	std::ostringstream oss;
+	for (auto it = this->begin(); it != this->end(); it++)
 	{
-		res << *it << " ";
+		oss << *it;
+		oss << (it != std::prev(this->end()) ? " " : "");
 	}
-	res << *it;
-	return res.str();
+	return oss.str();
 }
 
 template<typename T, std::size_t D>

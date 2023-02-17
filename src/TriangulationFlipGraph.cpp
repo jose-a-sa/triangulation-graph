@@ -2,57 +2,67 @@
 
 #include <stack>
 
-TriangulationFlipGraph::TriangulationFlipGraph(const std::vector<Point<int, 2>>& pts)
-	: parentMesh_(pts)
+TriangulationFlipGraph::TriangulationFlipGraph(const std::vector<Point<double, 2>>& pts)
 {
-	parentMesh_.triangulateDelaunay();
-	vertices_.insert(parentMesh_);
+	MeshTriangulation parentMesh(pts);
+	parentMesh.triangulateDelaunay();
+	vertices_.push_back(std::move(parentMesh));
 }
 
-TriangulationFlipGraph::TriangulationFlipGraph(std::vector<Point<int, 2>>&& pts)
-	: parentMesh_(std::move(pts))
+TriangulationFlipGraph::TriangulationFlipGraph(std::vector<Point<double, 2>>&& pts)
 {
-	parentMesh_.triangulateDelaunay();
-	vertices_.insert(parentMesh_);
+	MeshTriangulation parentMesh(std::move(pts));
+	parentMesh.triangulateDelaunay();
+	vertices_.push_back(std::move(parentMesh));
 }
 
 void TriangulationFlipGraph::generateGraph()
 {
+	if (vertices_.size() != 1)
+		return;
+
+	visitedHash_.clear();
+	indexMap_.clear();
+
+	boost::hash<MeshTriangulation> hasher{};
+
 	std::stack<MeshTriangulation> bfs;
-	bfs.push(parentMesh_);
+	bfs.push(vertices_[0]);
+	std::size_t parentHash = hasher(vertices_[0]);
+	visitedHash_.insert(parentHash);
+	indexMap_[parentHash] = 0;
 
 	while (!bfs.empty())
 	{
-		std::size_t levelSize = bfs.size();
-		while (levelSize--)
+		MeshTriangulation curr = bfs.top();
+		bfs.pop();
+		std::size_t currHash = hasher(curr);
+
+		for (const auto& [l, lf] : curr.flippableLines())
 		{
-			const MeshTriangulation& curr = bfs.top();
+			MeshTriangulation flipped(curr);
+			flipped.flipEdge(l);
+			std::size_t flippedHash = hasher(flipped);
 
-			for (const auto& [l, lf] : curr.flippableLines())
+			if (!visitedHash_.count(flippedHash))
 			{
-				MeshTriangulation currFlipped(curr);
-				currFlipped.flipEdge(l);
-
-				auto foundMesh_it = vertices_.find(currFlipped);
-
-				if (foundMesh_it != vertices_.end())
-				{
-					adj_[curr].insert(*foundMesh_it);
-					continue;
-				}
-
-				bfs.push(currFlipped);
-				adj_[curr].insert(currFlipped);
-				vertices_.insert(std::move(currFlipped));
+				bfs.push(flipped);
+				visitedHash_.insert(flippedHash);
+				vertices_.push_back(std::move(flipped));
+				indexMap_[flippedHash] = vertices_.size() - 1;
 			}
 
-			bfs.pop();
+			edges_.insert({indexMap_[currHash], indexMap_[flippedHash]});
 		}
 	}
 }
 
-const std::unordered_set<MeshTriangulation>&
-TriangulationFlipGraph::vertices() const
+const std::vector<MeshTriangulation>& TriangulationFlipGraph::vertices() const
 {
 	return vertices_;
+}
+
+const std::unordered_set<Point<std::size_t, 2>>& TriangulationFlipGraph::edges() const
+{
+	return edges_;
 }

@@ -8,18 +8,18 @@
 namespace boost::polygon
 {
 	template<>
-	struct geometry_concept<Point<int, 2>>
+	struct geometry_concept<Point<double, 2>>
 	{
 		typedef point_concept type;
 	};
 
 	template<>
-	struct point_traits<Point<int, 2>>
+	struct point_traits<Point<double, 2>>
 	{
-		typedef int coordinate_type;
+		typedef double coordinate_type;
 
 		static inline coordinate_type
-		get(const Point<int, 2>& point, const orientation_2d& orient)
+		get(const Point<double, 2>& point, const orientation_2d& orient)
 		{
 			return (orient == HORIZONTAL) ? point[0] : point[1];
 		}
@@ -28,18 +28,18 @@ namespace boost::polygon
 
 MeshTriangulation::MeshTriangulation(const MeshTriangulation& mesh) = default;
 
-MeshTriangulation::MeshTriangulation(const std::vector<Point<int, 2>>& pt)
-	: points_(pt)
+MeshTriangulation::MeshTriangulation(const std::vector<Point<double, 2>>& pt)
+	: coord_(pt)
 {
 }
 
-MeshTriangulation::MeshTriangulation(std::vector<Point<int, 2>>&& pt)
-	: points_(std::move(pt))
+MeshTriangulation::MeshTriangulation(std::vector<Point<double, 2>>&& pt)
+	: coord_(std::move(pt))
 {
 }
 
-MeshTriangulation::MeshTriangulation(std::initializer_list<Point<int, 2>>&& lst)
-	: points_(lst)
+MeshTriangulation::MeshTriangulation(std::initializer_list<Point<double, 2>>&& lst)
+	: coord_(lst)
 {
 }
 
@@ -51,7 +51,7 @@ void MeshTriangulation::triangulateDelaunay()
 	triangles_.clear();
 
 	boost::polygon::voronoi_diagram<double> vd;
-	boost::polygon::construct_voronoi(points_.begin(), points_.end(), &vd);
+	boost::polygon::construct_voronoi(coord_.begin(), coord_.end(), &vd);
 
 	for (const auto& vertex : vd.vertices())
 	{
@@ -125,9 +125,9 @@ inline double MeshTriangulation::triangleArea_(std::size_t a, std::size_t b, std
 {
 	double s1, s2, s3;
 
-	s1 = points_[a].distance(points_[b]);
-	s2 = points_[a].distance(points_[c]);
-	s3 = points_[b].distance(points_[c]);
+	s1 = coord_[a].distance(coord_[b]);
+	s2 = coord_[a].distance(coord_[c]);
+	s3 = coord_[b].distance(coord_[c]);
 
 	return sqrt((s1 + s2 + s3) * (-s1 + s2 + s3) * (s1 - s2 + s3) * (s1 + s2 - s3)) / 4;
 }
@@ -167,9 +167,9 @@ std::string MeshTriangulation::wkt() const
 	for (const auto& t : triangles())
 	{
 		oss << "(";
-		oss << points_[t.a].WKT() << ",";
-		oss << points_[t.b].WKT() << ",";
-		oss << points_[t.c].WKT();
+		oss << coord_[t.a].wtk() << ",";
+		oss << coord_[t.b].wtk() << ",";
+		oss << coord_[t.c].wtk();
 		oss << (t != *std::prev(triangles().end()) ? "), " : ")");
 	}
 	oss << ")";
@@ -216,6 +216,8 @@ void MeshTriangulation::computeConnectivity_()
 std::size_t hash_value(const MeshTriangulation& mesh)
 {
 	std::size_t seed = 0;
+	for (const auto& p : mesh.coordinates())
+		boost::hash_combine(seed, boost::hash<Point<double,2>>()(p));
 	for (const auto& t : mesh.triangles())
 		boost::hash_combine(seed, boost::hash<TriangleCell>()(t));
 	return seed;
@@ -224,4 +226,9 @@ std::size_t hash_value(const MeshTriangulation& mesh)
 bool MeshTriangulation::operator==(const MeshTriangulation& other) const
 {
 	return hash_value(*this) == hash_value(other);
+}
+
+const std::vector<Point<double, 2>>& MeshTriangulation::coordinates() const
+{
+	return coord_;
 }

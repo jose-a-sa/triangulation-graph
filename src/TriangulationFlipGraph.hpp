@@ -10,15 +10,16 @@
 class TriangulationFlipGraph
 {
 public:
-	explicit TriangulationFlipGraph(const std::vector<Point<int, 2>>& pts);
-	explicit TriangulationFlipGraph(std::vector<Point<int, 2>>&& pts);
+	explicit TriangulationFlipGraph(const std::vector<Point<double, 2>>& pts);
+	explicit TriangulationFlipGraph(std::vector<Point<double, 2>>&& pts);
 	void generateGraph();
-	const std::unordered_set<MeshTriangulation>& vertices() const;
+	const std::vector<MeshTriangulation>& vertices() const;
+	const std::unordered_set<Point<std::size_t, 2>>& edges() const;
 private:
-	MeshTriangulation parentMesh_;
-	std::unordered_set<MeshTriangulation> vertices_;
-	std::unordered_map<MeshTriangulation, std::unordered_set<MeshTriangulation>> adj_;
-	std::vector<std::pair<std::size_t, std::size_t>> edges_;
+	std::vector<MeshTriangulation> vertices_;
+	std::unordered_set<std::size_t> visitedHash_;
+	std::unordered_map<std::size_t, std::size_t> indexMap_;
+	std::unordered_set<Point<std::size_t, 2>> edges_;
 };
 
 #endif //CONVEX_TRIANGULATIONS_TRIANGULATIONFLIPGRAPH_HPP

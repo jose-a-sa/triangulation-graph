@@ -1,24 +1,86 @@
+#include <boost/tokenizer.hpp>
+#include <boost/range/algorithm.hpp>
+#include <boost/lexical_cast.hpp>
+#include <iterator>
 #include <iostream>
+#include <stack>
+
 #include <vector>
 #include "Point.hpp"
 #include "TriangulationFlipGraph.hpp"
 
-
-int main()
+template<typename T>
+void parseArgument(std::vector<Point<T, 2>>& res, const std::string& sv)
 {
-	std::vector<Point<int, 2>> pts{
-		{0, 0}, {1, 0}, {0, 1}, {1, 1}, {1, 2}, {0, 2}};
+	auto numParser = [&](const std::string& s) -> T
+	{
+		T res;
+		try
+		{
+			res = boost::lexical_cast<T>(s);
+		}
+		catch (const boost::bad_lexical_cast& e)
+		{
+			std::cerr << e.what() << '\n';
+			std::exit(1);
+		}
+		return res;
+	};
 
-	std::vector<Point<int, 2>> pts2{
-		{-1, -1}, {-1, 0}, {-1, 1}, {0, -1}, {0, 0}, {0, 1}, {1, -1}};
+	auto stackToPointVector = [&numParser, &res](std::stack<std::string>& st) -> void
+	{
+		if (st.size() != 2)
+		{
+			std::cerr << "Dimension of point is not 2." << std::endl;
+			std::exit(1);
+		}
+		Point<T, 2> pt;
+		pt[0] = numParser(st.top());
+		st.pop();
+		pt[1] = numParser(st.top());
+		st.pop();
+		res.push_back(pt);
+	};
 
-	TriangulationFlipGraph gr(pts2);
+	std::string curr;
+	std::stack<std::string> st;
+
+	for (const char& c : sv)
+	{
+		if (c == '(' || isspace(c))
+			continue;
+		else if (c == ')' || c == ',')
+		{
+			std::cout << curr << std::endl;
+			st.push(curr);
+			if (c == ')') stackToPointVector(st);
+			curr.clear();
+		}
+		else
+			curr.push_back(c);
+	}
+}
+
+int main(int argc, const char* argv[])
+{
+	if (argc != 2)
+	{
+		std::cerr << "Expecting 1 argument as a string of points." << std::endl;
+		std::exit(1);
+	}
+
+	std::string arg_coords(argv[1]);
+	std::vector<Point<double, 2>> coords;
+	parseArgument<double>(coords, arg_coords);
+
+	TriangulationFlipGraph gr(std::move(coords));
 	gr.generateGraph();
-
-	std::cout << std::endl;
 
 	for (const auto& mesh : gr.vertices())
 		std::cout << mesh.wkt() << std::endl;
+	for (const auto& eg : gr.edges())
+		std::cout << eg << " ";
+	std::cout << std::endl;
 
 	return 0;
 }

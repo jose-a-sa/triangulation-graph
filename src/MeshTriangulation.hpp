@@ -15,17 +15,19 @@ class MeshTriangulation
 public:
 	MeshTriangulation(const MeshTriangulation& mesh);
 
-	explicit MeshTriangulation(const std::vector<Point<int, 2>>& pt);
+	explicit MeshTriangulation(const std::vector<Point<double, 2>>& pt);
 
-	explicit MeshTriangulation(std::vector<Point<int, 2>>&& pt);
+	explicit MeshTriangulation(std::vector<Point<double, 2>>&& pt);
 
-	MeshTriangulation(std::initializer_list<Point<int, 2>>&& lst);
+	MeshTriangulation(std::initializer_list<Point<double, 2>>&& lst);
 
 	~MeshTriangulation();
 
 	void triangulateDelaunay();
 
 	void flipEdge(const LineCell& l);
+
+	const std::vector<Point<double, 2>>& coordinates() const;
 
 	const std::set<LineCell>& lines() const;
 
@@ -42,7 +44,7 @@ public:
 	friend std::size_t hash_value(const MeshTriangulation& mesh);
 
 private:
-	std::vector<Point<int, 2>> points_;
+	std::vector<Point<double, 2>> coord_;
 	std::set<LineCell> lines_;
 	std::set<TriangleCell> triangles_;
 	std::unordered_map<LineCell, std::set<TriangleCell>> edgeTrigAdj_;

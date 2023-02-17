@@ -19,5 +19,5 @@ set(SRC_FILES
         src/TriangulationFlipGraph.cpp
         src/main.cpp)
 
-add_executable(main ${SRC_FILES})
-set_property(TARGET main PROPERTY CXX_STANDARD 17)
+add_executable(triangulation-graph ${SRC_FILES})
+set_property(TARGET triangulation-graph PROPERTY CXX_STANDARD 17)

@@ -39,12 +39,11 @@ public:
 
 	void insert(std::size_t i);
 	std::size_t size() const;
+	std::size_t otherPoint(const LineCell& l) const;
 
 	bool operator<(const TriangleCell& rhs) const;
 	bool operator==(const TriangleCell& rhs) const;
 	bool operator!=(const TriangleCell& rhs) const;
-
-	std::size_t otherPoint(const LineCell& l) const;
 
 	friend std::size_t hash_value(const TriangleCell& l);
 };
