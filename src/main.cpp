@@ -69,13 +69,6 @@ int main(int argc, const char* argv[])
 	std::vector<Point> coords;
 	parseArgument(coords, arg_coords);
 
-	MeshTriangulation mesh(coords);
-	mesh.triangulateDelaunay();
-
-
-//	auto [l, lf] = *mesh.flippableLines().begin();
-//	mesh.flipLine(l);
-
 	TriangulationFlipGraph gr(std::move(coords));
 	gr.generateGraph();
 
