@@ -99,7 +99,7 @@ inline std::string Point<T, D>::toString() const
 	oss << "{";
 	for (auto it = this->begin(); it != this->end(); it++)
 	{
-		oss << (*it >= 0 &&  it != this->begin() ? " " : "");
+		oss << (*it >= 0 && it != this->begin() ? " " : "");
 		oss << *it;
 		oss << (it != std::prev(this->end()) ? "," : "}");
 	}

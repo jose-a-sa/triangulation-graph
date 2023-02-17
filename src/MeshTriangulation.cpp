@@ -217,7 +217,7 @@ std::size_t hash_value(const MeshTriangulation& mesh)
 {
 	std::size_t seed = 0;
 	for (const auto& p : mesh.coordinates())
-		boost::hash_combine(seed, boost::hash<Point<double,2>>()(p));
+		boost::hash_combine(seed, boost::hash<Point<double, 2>>()(p));
 	for (const auto& t : mesh.triangles())
 		boost::hash_combine(seed, boost::hash<TriangleCell>()(t));
 	return seed;

@@ -6,17 +6,17 @@
 #include "Point.hpp"
 #include "TriangulationFlipGraph.hpp"
 
-template <typename T>
-void parseArgument(std::vector<Point<T, 2>> &res, const std::string &sv)
+template<typename T>
+void parseArgument(std::vector<Point<T, 2>>& res, const std::string& sv)
 {
-	auto numParser = [&](const std::string &s) -> T
+	auto numParser = [&](const std::string& s) -> T
 	{
 		T res;
 		try
 		{
 			res = boost::lexical_cast<T>(s);
 		}
-		catch (const boost::bad_lexical_cast &e)
+		catch (const boost::bad_lexical_cast& e)
 		{
 			std::cerr << e.what() << '\n';
 			std::exit(1);
@@ -24,7 +24,7 @@ void parseArgument(std::vector<Point<T, 2>> &res, const std::string &sv)
 		return res;
 	};
 
-	auto stackToPointVector = [&numParser, &res](std::stack<std::string> &st) -> void
+	auto stackToPointVector = [&numParser, &res](std::stack<std::string>& st) -> void
 	{
 		if (st.size() != 2)
 		{
@@ -42,7 +42,7 @@ void parseArgument(std::vector<Point<T, 2>> &res, const std::string &sv)
 	std::string curr;
 	std::stack<std::string> st;
 
-	for (const char &c : sv)
+	for (const char& c : sv)
 	{
 		if (c == '(' || isspace(c))
 			continue;
@@ -58,7 +58,7 @@ void parseArgument(std::vector<Point<T, 2>> &res, const std::string &sv)
 	}
 }
 
-int main(int argc, const char *argv[])
+int main(int argc, const char* argv[])
 {
 	if (argc != 2)
 	{
@@ -73,9 +73,9 @@ int main(int argc, const char *argv[])
 	TriangulationFlipGraph gr(std::move(coords));
 	gr.generateGraph();
 
-	for (const auto &mesh : gr.vertices())
+	for (const auto& mesh : gr.vertices())
 		std::cout << mesh.wkt() << std::endl;
-	for (const auto &eg : gr.edges())
+	for (const auto& eg : gr.edges())
 		std::cout << eg << " ";
 	std::cout << std::endl;
 

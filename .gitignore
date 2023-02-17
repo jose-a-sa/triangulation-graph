@@ -6,6 +6,7 @@ data/*
 Other/*
 
 CMakeCache.txt
+cmake-build-*
 CMakeFiles
 CMakeScripts
 Testing

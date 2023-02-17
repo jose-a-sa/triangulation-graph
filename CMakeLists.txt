@@ -1,6 +1,6 @@
 # Specify the minimum CMAKE version required
 cmake_minimum_required(VERSION 3.5.0)
-project(convex-triangulations)
+project(triangulation-graph)
 
 # Set output directories
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/../lib")
