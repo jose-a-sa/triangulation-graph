@@ -1,3 +1,4 @@
+#include <boost/assert.hpp>
 #include <boost/lexical_cast.hpp>
 #include <iostream>
 #include <stack>
@@ -25,11 +26,9 @@ void parseArgument(std::vector<Point>& res, const std::string& sv)
 
 	auto stackToPointVector = [&](std::stack<std::string>& st) -> void
 	{
-		if (st.size() != 2)
-		{
-			std::cerr << "ERROR: Dimension of point is not 2." << std::endl;
-			std::exit(1);
-		}
+		BOOST_ASSERT_MSG(st.size() == 2,
+			"Point has only 2 elements, in parseArgument");
+
 		Point pt;
 		pt.x = numParser(st.top());
 		st.pop();

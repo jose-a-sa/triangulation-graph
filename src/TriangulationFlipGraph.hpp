@@ -2,7 +2,6 @@
 #define CONVEX_TRIANGULATIONS_TRIANGULATIONFLIPGRAPH_HPP
 
 #include <boost/functional/hash.hpp>
-#include <boost/functional/hash.hpp>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>

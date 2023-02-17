@@ -1,8 +1,8 @@
 #include "Point.hpp"
 
+#include <boost/assert.hpp>
 #include <sstream>
 #include <cmath>
-#include <stdexcept>
 
 Point::Point()
 	: x(0), y(0)
@@ -31,8 +31,8 @@ Point::~Point() = default;
 
 Point::ValueType& Point::at(std::size_t i)
 {
-	if (i >= 2)
-		throw std::out_of_range("Point has only 2 elements");
+	BOOST_ASSERT_MSG(i < 2,
+		"Point has only 2 elements");
 
 	return i == 0 ? this->x : this->y;
 }

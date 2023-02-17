@@ -15,7 +15,8 @@ Take for example a set of points given by _(-1,-1) (-1,0) (-1,1) (0,-1) (0,0) (0
 ## Output
 
 The program outputs all the possible triangulations in WKT (well-known text) format.
-The last line in the output is the edges of the graph connecting the triangulation by a flip operation (labelled by 0, 1, ..., in the same order).
+The last line in the output is the edges of the graph connecting the triangulation by a flip operation (labelled by 0,
+1, ..., in the same order).
 
 ```
 MULTIPOLYGON((-1 -1,0 -1,0 0), (-1 -1,-1 0,0 0), (0 -1,1 -1,1 0), (0 -1,0 0,1 0), (-1 0,0 0,-1 1), (0 0,1 0,-1 1))
