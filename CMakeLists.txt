@@ -20,5 +20,17 @@ set(SRC_FILES
         src/TriangulationFlipGraph.cpp
         src/main.cpp)
 
+set(MEASURE_FILES
+        src/Point.cpp
+        src/MeshCells.cpp
+        src/MeshTriangulation.cpp
+        src/TriangulationFlipGraph.cpp
+        src/measure.cpp)
+
 add_executable(triangulation-graph ${SRC_FILES})
 set_property(TARGET triangulation-graph PROPERTY CXX_STANDARD 17)
+
+add_executable(triangulation-graph-measure ${MEASURE_FILES})
+set_property(TARGET triangulation-graph-measure PROPERTY CXX_STANDARD 17)
+target_compile_options(triangulation-graph-measure PRIVATE -O0)
+
