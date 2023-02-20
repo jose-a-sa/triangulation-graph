@@ -1,11 +1,8 @@
 #include "Point.hpp"
 
-#include <boost/functional/hash.hpp>
-#include <stdexcept>
 #include <sstream>
 #include <cmath>
-#include <iostream>
-
+#include <stdexcept>
 
 Point::Point()
     : x(0), y(0)
@@ -62,8 +59,8 @@ bool Point::operator==(const Point& rhs) const
 
 Point::ValueType& Point::at(std::size_t i)
 {
-    if(i >= 2)
-        throw std::out_of_range("Point has only 2 elements");
+	if (i >= 2)
+		throw std::out_of_range("Point has only 2 elements");
 
     return i == 0 ? this->x : this->y;
 }
