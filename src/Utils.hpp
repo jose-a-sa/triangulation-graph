@@ -4,23 +4,51 @@
 #include <iostream>
 #include <chrono>
 #include <random>
+#include <list>
 #include "Point.hpp"
+
+class ListUtil
+{
+public:
+    using list_iterator = std::list<std::size_t>::iterator;
+    static std::list<std::size_t>::iterator
+    eraseCircular(std::list<std::size_t>& lst, std::list<std::size_t>::iterator b, std::list<std::size_t>::iterator e)
+    {
+        if(b == e)
+            return e;
+
+        auto b_c = b;
+        while(b_c != e)
+        {
+            if(b_c++ == lst.end())
+            {
+                long dist = std::distance(b, e) - 1;
+                lst.splice(lst.end(), lst, e, b);
+                return lst.erase(lst.begin(), std::next(lst.begin(), dist));
+            }
+        }
+
+        return lst.erase(b, e);
+    }
+};
 
 class Timer
 {
 public:
-    Timer(bool printOnInvalidation = true)
+    Timer(bool printOnInvalidation, const std::string& msg)
+        : printOnInvalidation_(printOnInvalidation), msg_(msg)
     {
-        printOnInvalidation_ = printOnInvalidation;
         startTimepoint_ = std::chrono::high_resolution_clock::now();
     }
-
+    explicit Timer(bool printOnInvalidation = true)
+        : Timer(true, "Timer")
+    {
+    }
     ~Timer()
     {
         if(printOnInvalidation_)
-            std::cout << "Timer :" << Duration() << "us";
+            std::cout << msg_ << " : " << Duration() << "us\n";
     }
-
     double Duration()
     {
         auto endTimepoint_ = std::chrono::high_resolution_clock::now();
@@ -33,6 +61,7 @@ public:
 private:
     std::chrono::time_point<std::chrono::high_resolution_clock> startTimepoint_;
     bool printOnInvalidation_;
+    std::string msg_;
 };
 
 class RandomPoint

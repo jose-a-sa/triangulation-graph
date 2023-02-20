@@ -13,13 +13,9 @@ public:
     using ValueType = double;
     ValueType x, y;
     Point();
-    Point(const Point& pt);
-    Point(Point&& pt) noexcept;
     explicit Point(ValueType x, ValueType y);
     Point(std::initializer_list<ValueType>&& v);
     ~Point();
-    Point& operator=(const Point& pt);
-    Point& operator=(Point&& pt);
     bool operator<(const Point& rhs) const;
     bool operator==(const Point& rhs) const;
     Point operator+(const Point& rhs) const;
@@ -33,7 +29,6 @@ public:
     static double dot(const Point& lhs, const Point& rhs);
     static double cross(const Point& lhs, const Point& rhs);
     static double cross(const Point& p1, const Point& p2, const Point& p3);
-    static double circumcircleRadius(const Point& p1, const Point& p2, const Point& p3);
     static std::pair<Point, double> circumcircle(const Point& p1, const Point& p2, const Point& p3);
 };
 

@@ -4,14 +4,14 @@
 #include "../src/Point.hpp"
 
 
-TEST(Point, at_inBounds)
+TEST(PointTest, at_inBounds)
 {
     Point pt(23, -17);
     EXPECT_EQ(pt.at(0), 23);
     EXPECT_EQ(pt.at(1), -17);
 }
 
-TEST(Point, at_outOfBounds)
+TEST(PointTest, at_outOfBounds)
 {
     Point pt;
     try
@@ -25,7 +25,7 @@ TEST(Point, at_outOfBounds)
     }
 }
 
-TEST(Point, initializerList_inBounds)
+TEST(PointTest, initializerList_inBounds)
 {
     Point pt1{3, 5};
     EXPECT_EQ(pt1.x, 3);
@@ -36,7 +36,7 @@ TEST(Point, initializerList_inBounds)
     EXPECT_EQ(pt2.y, 11);
 }
 
-TEST(Point, initializerList_outOfBounds)
+TEST(PointTest, initializerList_outOfBounds)
 {
     try
     {
@@ -59,26 +59,26 @@ TEST(Point, initializerList_outOfBounds)
     }
 }
 
-TEST(Point, toString_0_m17)
+TEST(PointTest, toString_0_m17)
 {
     Point pt(0, -17);
     EXPECT_EQ(pt.toString(), "{0,-17}");
 }
 
-TEST(Point, toString_m127_12)
+TEST(PointTest, toString_m127_12)
 {
     Point pt(-127, 12);
     EXPECT_EQ(pt.toString(), "{-127,12}");
 }
 
-TEST(Point, Distance_3_4)
+TEST(PointTest, Distance_3_4)
 {
     Point oo;
     Point pt(3, 4);
     EXPECT_NEAR(oo.distance(pt), 5, 0.0000000001);
 }
 
-TEST(Point, Distance_7_11)
+TEST(PointTest, Distance_7_11)
 {
     Point oo;
     Point pt(7, 11);

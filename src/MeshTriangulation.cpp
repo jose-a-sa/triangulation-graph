@@ -1,5 +1,7 @@
 #include "MeshTriangulation.hpp"
 
+#include "Utils.hpp"
+
 #include <boost/assert.hpp>
 #include <boost/math/special_functions/relative_difference.hpp>
 #include <boost/polygon/voronoi.hpp>
@@ -7,6 +9,7 @@
 #include <sstream>
 #include <algorithm>
 #include <iomanip>
+#include <list>
 
 namespace boost::polygon
 {
@@ -113,10 +116,7 @@ void MeshTriangulation::triangulate()
 
 void MeshTriangulation::flipLine(const LineCell& l)
 {
-    if(!edgeTrigAdj_.count(l))
-        return;
-
-    if(!flippable_.count(l))
+    if(!edgeTrigAdj_.count(l) || !flippable_.count(l))
         return;
 
     LineCell l_flip = flippable_.at(l);
@@ -256,18 +256,43 @@ void MeshTriangulation::triangulate_()
     std::vector<std::size_t> idx(coord_.size());
     std::iota(idx.begin(), idx.end(), 0);
 
-    sweepHullSort_(idx, 2 * coord_.size() / 5);
+    Point centroid = std::accumulate(
+        coord_.begin(), coord_.end(), Point(0, 0),
+        [](Point& acc, const Point& x)
+        {
+            return (acc += x);
+        });
+    centroid = {centroid.x / coord_.size(), centroid.y / coord_.size()};
 
-    for(auto j : idx)
-    {
-        auto [ccc, rr] = Point::circumcircle(coord_[idx[0]], coord_[idx[1]], coord_[j]);
-        std::cout << "[" << j << "]"
-                  << std::setw(25) << coord_[j].toString()
-                  << std::setw(12) << coord_[j].distance(coord_[idx[0]])
-                  << std::setw(25) << ccc.toString()
-                  << std::setw(12) << rr
-                  << "\n";
-    }
+    auto pivot_it = std::min_element(
+        idx.begin(), idx.end(),
+        [&](std::size_t i, std::size_t j)
+        {
+            return centroid.distance(coord_[i]) < centroid.distance(coord_[j]);
+        });
+
+    sweepHullSort_(idx, *pivot_it);
+
+//    for(auto j : idx)
+//    {
+//        auto [ccc, rr] = Point::circumcircle(coord_[idx[0]], coord_[idx[1]], coord_[j]);
+//        std::cout << "[" << j << "]"
+//                  << std::setw(25) << coord_[j].toString()
+//                  << std::setw(12) << coord_[j].distance(coord_[idx[0]])
+//                  << std::setw(25) << ccc.toString()
+//                  << std::setw(12) << rr
+//                  << "\n";
+//    }
+
+    std::list<std::size_t> hull(idx.begin(), std::next(idx.begin(), 3));
+
+    triangles_.emplace(idx[0], idx[1], idx[2]);
+    lines_.emplace(idx[0], idx[2]);
+    lines_.emplace(idx[1], idx[2]);
+    lines_.emplace(idx[1], idx[3]);
+
+    for(std::size_t i = 3; i < idx.size(); i++)
+        sweepHullAdd_(hull, idx[i]);
 }
 
 void MeshTriangulation::sweepHullSort_(std::vector<std::size_t>& idx, std::size_t pivot = 0)
@@ -337,4 +362,30 @@ void MeshTriangulation::sweepHullSort_(std::vector<std::size_t>& idx, std::size_
     }
 }
 
+void MeshTriangulation::sweepHullAdd_(std::list<std::size_t>& hull, std::size_t idx)
+{
+    auto circularNext = [&](std::list<std::size_t>::iterator it)
+    { return std::next(it) == hull.end() ? std::next(it, 2) : std::next(it); };
+
+    bool visible_prev = false, visible = false;
+    std::list<std::size_t>::iterator it, it_next, cut_b = hull.end(), cut_e = hull.end();
+    for(it = hull.begin(), it_next = circularNext(hull.begin()); it != hull.end(); it++, it_next = circularNext(it))
+    {
+        visible_prev = visible;
+        visible = Point::cross(coord_[idx], coord_[*it], coord_[*it_next]) > 0;
+        if(visible)
+        {
+            cut_b = visible_prev ^ visible ? it : cut_b;
+            triangles_.emplace(idx, *it, *it_next);
+            lines_.emplace(idx, *it);
+            lines_.emplace(idx, *it_next);
+        }
+        else
+            cut_e = visible_prev ^ visible ? it : cut_e;
+    }
+
+    hull.insert(
+        ListUtil::eraseCircular(hull, std::next(cut_b), cut_e),
+        idx);
+}
 

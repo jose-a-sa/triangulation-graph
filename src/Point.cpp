@@ -25,25 +25,7 @@ Point::Point(std::initializer_list<Point::ValueType>&& v)
         this->at(i++) = elem;
 }
 
-Point::Point(const Point& pt) = default;
-
-Point::Point(Point&& pt) noexcept = default;
-
 Point::~Point() = default;
-
-Point& Point::operator=(const Point& pt)
-{
-    x = pt.x;
-    y = pt.y;
-    return *this;
-}
-
-Point& Point::operator=(Point&& pt)
-{
-    x = pt.x;
-    y = pt.y;
-    return *this;
-}
 
 bool Point::operator<(const Point& rhs) const
 {

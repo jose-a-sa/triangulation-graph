@@ -8,6 +8,7 @@
 #include <initializer_list>
 #include <unordered_map>
 #include <string>
+#include <list>
 
 #include "Point.hpp"
 #include "MeshCell.hpp"
@@ -48,7 +49,7 @@ private:
     void init_();
     void triangulate_();
     void sweepHullSort_(std::vector<std::size_t>& idx, std::size_t pivot);
-    void sweepHullSeed_(std::vector<std::size_t>& idx);
+    void sweepHullAdd_(std::list<std::size_t>& hull, std::size_t i);
     void computeConnectivity_();
     void computeConnectivity_(const LineCell& l);
 
