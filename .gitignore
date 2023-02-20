@@ -1,9 +1,7 @@
 #Project related
-build/*
 bin/log/*
-**/*.nb
-data/*
-Other/*
+build/*
+.idea
 
 CMakeCache.txt
 cmake-build-*
