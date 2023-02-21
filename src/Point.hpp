@@ -6,6 +6,7 @@
 #include <utility>
 #include <initializer_list>
 #include <string>
+#include <random>
 
 class Point
 {
@@ -38,6 +39,25 @@ struct std::hash<Point>
     std::size_t operator()(const Point& pt) const noexcept
     {
         return boost::hash<Point>()(pt); // or use boost::hash_combine
+    }
+};
+
+class PointFactory
+{
+public:
+    static std::vector<Point> randomSample(std::size_t n = 1, double a = 0.0, double b = 1.0)
+    {
+        std::random_device rd;
+        std::mt19937 eng(rd());
+        std::uniform_real_distribution<> dist(a, b);
+
+        std::vector<Point> res;
+        res.reserve(n);
+        for(std::size_t i = 0; i < n; i++)
+        {
+            res.emplace_back(dist(eng), dist(eng));
+        }
+        return res;
     }
 };
 

@@ -27,8 +27,7 @@ void TriangulationFlipGraph::generateGraph()
 
     std::stack<MeshTriangulation> bfs;
     bfs.push(vertices_[0]);
-    std::size_t parentHash = hasher(vertices_[0]);
-    indexMap_[parentHash] = 0;
+    indexMap_[hasher(vertices_[0])] = 0;
 
     while(!bfs.empty())
     {

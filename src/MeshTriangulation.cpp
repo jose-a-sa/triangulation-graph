@@ -4,44 +4,21 @@
 
 #include <boost/assert.hpp>
 #include <boost/math/special_functions/relative_difference.hpp>
-#include <boost/polygon/voronoi.hpp>
 #include <numeric>
-#include <sstream>
 #include <algorithm>
 #include <iomanip>
 #include <list>
 
-namespace boost::polygon
-{
-    template<>
-    struct geometry_concept<Point>
-    {
-        typedef point_concept type;
-    };
-
-    template<>
-    struct point_traits<Point>
-    {
-        typedef double coordinate_type;
-
-        static inline coordinate_type
-        get(const Point& point, const orientation_2d& orient)
-        {
-            return (orient == HORIZONTAL) ? point.x : point.y;
-        }
-    };
-}
-
 MeshTriangulation::MeshTriangulation() = default;
 
 MeshTriangulation::MeshTriangulation(const std::vector<Point>& pt)
-    : coord_(pt)
+    : coord_(pt), coordMeshHash_(0)
 {
     init_();
 }
 
 MeshTriangulation::MeshTriangulation(std::vector<Point>&& pt)
-    : coord_(std::move(pt))
+    : coord_(std::move(pt)), coordMeshHash_(0)
 {
     init_();
 }
@@ -58,47 +35,6 @@ void MeshTriangulation::init_()
     for(const auto& p : this->coordinates())
         boost::hash_combine(this->coordMeshHash_, hasher(p));
 }
-
-//void MeshTriangulation::triangulateDelaunay()
-//{
-//    lines_.clear();
-//    triangles_.clear();
-//
-//    boost::polygon::voronoi_diagram<double> vd;
-//    boost::polygon::construct_voronoi(coordinates().begin(), coordinates().end(), &vd);
-//
-//    for(const auto& vertex : vd.vertices())
-//    {
-//        const boost::polygon::voronoi_edge<double>* base_edge = vertex.incident_edge();
-//
-//        std::queue<const boost::polygon::voronoi_edge<double>*> bfs;
-//        bfs.push(base_edge->rot_next());
-//        std::size_t base_idx = base_edge->cell()->source_index();
-//
-//        while(bfs.back() != base_edge && !bfs.empty())
-//        {
-//            const boost::polygon::voronoi_edge<double>* edge = bfs.back();
-//            std::size_t idx = edge->cell()->source_index();
-//
-//            BOOST_ASSERT_MSG(edge->cell()->contains_point(),
-//                "LineCell cell does not contain point, in MeshTriangulation::triangulateDelaunay");
-//
-//            lines_.emplace(base_idx, idx);
-//
-//            if(bfs.size() == 2)
-//            {
-//                std::size_t next_idx = bfs.front()->cell()->source_index();
-//                lines_.emplace(idx, next_idx);
-//                triangles_.emplace(base_idx, idx, next_idx);
-//                bfs.pop();
-//            }
-//
-//            bfs.push(edge->rot_next());
-//        }
-//    }
-//
-//    computeConnectivity_();
-//}
 
 void MeshTriangulation::flipLine(const LineCell& l)
 {
@@ -169,11 +105,6 @@ const std::unordered_map<LineCell, LineCell>& MeshTriangulation::flippableLines(
 {
     return this->flippable_;
 }
-
-//const std::unordered_map<LineCell, std::set<TriangleCell>>& MeshTriangulation::edgeTriangleAdjacency() const
-//{
-//    return this->edgeTrigAdj_;
-//}
 
 std::string MeshTriangulation::wkt() const
 {
@@ -249,10 +180,11 @@ void MeshTriangulation::triangulate()
     sweepHullSort_(idx, 2 * n / 5);
 
     std::list<std::size_t> hull(idx.begin(), std::next(idx.begin(), 3));
-    triangles_.emplace(idx[0], idx[1], idx[2]);
-    lines_.emplace(idx[0], idx[1]);
-    lines_.emplace(idx[1], idx[2]);
-    lines_.emplace(idx[2], idx[0]);
+    auto trig_it = triangles_.emplace(idx[0], idx[1], idx[2]).first;
+    auto l1_it = lines_.emplace(idx[0], idx[1]).first;
+    auto l2_it = lines_.emplace(idx[1], idx[2]).first;
+    auto l3_it = lines_.emplace(idx[2], idx[0]).first;
+    updateAdjacency_(*trig_it, *l1_it, *l2_it, *l3_it);
 
     for(std::size_t i = 3; i < n; i++)
     {
@@ -280,8 +212,7 @@ void MeshTriangulation::sweepHullSort_(std::vector<std::size_t>& idx, std::size_
         std::swap(idx[1], *it1);
 
         std::size_t i2 = 2;
-        double min_r = Point::circumcircle(coord_[idx[0]], coord_[idx[1]],
-            coord_[idx[2]]).second;
+        double min_r = Point::circumcircle(coord_[idx[0]], coord_[idx[1]], coord_[idx[2]]).second;
         if(std::isnan(min_r))
         {
             ++i0;
@@ -318,10 +249,10 @@ void MeshTriangulation::sweepHullSort_(std::vector<std::size_t>& idx, std::size_
         if(n > 4)
         {
             std::sort(std::next(idx.begin(), 3), idx.end(),
-                [&CC = cc, this](std::size_t i, std::size_t j) -> bool
-                {
-                    return CC.distance(coord_[i]) < CC.distance(coord_[j]);
-                });
+                      [&CC = cc, this](std::size_t i, std::size_t j) -> bool
+                      {
+                          return CC.distance(coord_[i]) < CC.distance(coord_[j]);
+                      });
         }
 
         break;
@@ -333,7 +264,7 @@ void MeshTriangulation::sweepHullAdd_(std::list<std::size_t>& hull, std::size_t 
     auto circularNext = [&](std::list<std::size_t>::iterator it)
     { return std::next(it) == hull.end() ? std::next(it, 2) : std::next(it); };
 
-    bool visible_prev = false, visible = false;
+    bool visible_prev, visible = false;
     std::list<std::size_t>::iterator it, it_next, cut_b = hull.end(), cut_e = hull.end();
     for(it = hull.begin(), it_next = circularNext(hull.begin()); it != hull.end(); it++, it_next = circularNext(it))
     {
@@ -345,13 +276,48 @@ void MeshTriangulation::sweepHullAdd_(std::list<std::size_t>& hull, std::size_t 
             auto trig_it = triangles_.emplace(idx, *it, *it_next).first;
             auto l1_it = lines_.emplace(idx, *it).first;
             auto l2_it = lines_.emplace(idx, *it_next).first;
-            edgeTrigAdj_[*l1_it].insert(*trig_it);
-            edgeTrigAdj_[*l2_it].insert(*trig_it);
+            updateAdjacency_(*trig_it, *l1_it, *l2_it, LineCell(*it, *it_next));
         }
         else
             cut_e = visible_prev ^ visible ? it : cut_e;
     }
 
-    hull.insert(ListUtil::eraseCircular(hull, std::next(cut_b), cut_e), idx);
+    hull.insert(ListUtil<std::size_t>::circularErase(hull, std::next(cut_b), cut_e), idx);
+}
+
+void
+MeshTriangulation::updateAdjacency_(const TriangleCell& t)
+{
+    updateAdjacency_(t, LineCell(t.a, t.b), LineCell(t.a, t.c), LineCell(t.b, t.c));
+}
+
+void
+MeshTriangulation::updateAdjacency_(const TriangleCell& t, const LineCell& l1, const LineCell& l2, const LineCell& l3)
+{
+    edgeTrigAdj_[l1].insert(t);
+    edgeTrigAdj_[l2].insert(t);
+    edgeTrigAdj_[l3].insert(t);
+}
+
+void MeshTriangulation::updateFlippable_(const LineCell& l)
+{
+    if(!edgeTrigAdj_.count(l))
+        return;
+    if(edgeTrigAdj_.at(l).size() != 2)
+        return;
+
+    std::size_t lf_a, lf_b;
+    auto trig_it = edgeTrigAdj_.at(l).begin();
+    lf_a = trig_it->oppositePoint(l);
+    std::advance(trig_it, 1);
+    lf_b = trig_it->oppositePoint(l);
+
+    if(lf_a == -1 || lf_b == -1)
+        return;
+
+    if(!convexPolygon_(l.a, lf_a, l.b, lf_b))
+        return;
+
+    flippable_[l] = LineCell(lf_a, lf_b);
 }
 

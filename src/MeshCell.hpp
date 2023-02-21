@@ -68,4 +68,4 @@ struct std::hash<TriangleCell>
 };
 
 
-#endif //CONVEX_TRIANGULATIONSMESHCELLS_HPP
+#endif //CONVEX_TRIANGULATIONS_MESHCELLS_HPP

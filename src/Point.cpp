@@ -41,8 +41,8 @@ bool Point::operator==(const Point& rhs) const
 
 Point::ValueType& Point::at(std::size_t i)
 {
-	if (i >= 2)
-		throw std::out_of_range("Point has only 2 elements");
+    if(i >= 2)
+        throw std::out_of_range("Point has only 2 elements");
 
     return i == 0 ? this->x : this->y;
 }
@@ -113,10 +113,10 @@ double Point::cross(const Point& p1, const Point& p2, const Point& p3)
 std::pair<Point, double> Point::circumcircle(const Point& p1, const Point& p2, const Point& p3)
 {
     Point p = p2 - p1, q = p3 - p1;
-    double pnorm2 = Point::dot(p, p);
-    double qnorm2 = Point::dot(q, q);
+    double p_norm2 = Point::dot(p, p);
+    double q_norm2 = Point::dot(q, q);
     double den = 2.0 * Point::cross(p, q);
-    Point CC = {(q.y * pnorm2 - p.y * qnorm2) / den, (p.x * qnorm2 - q.x * pnorm2) / den};
+    Point CC = {(q.y * p_norm2 - p.y * q_norm2) / den, (p.x * q_norm2 - q.x * p_norm2) / den};
     double radius = std::sqrt(Point::dot(CC, CC));
     CC += p1;
     return {CC, radius};

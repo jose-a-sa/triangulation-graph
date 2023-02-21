@@ -31,7 +31,7 @@ TEST(MeshTriangulationTest, Single_Large_is1Triangle)
 TEST(MeshTriangulationTest, Square_is2Triangles)
 {
     auto mesh = MeshFactory::makeMesh({
-        Point(0, 0), Point(1, 0), Point(0, 1), Point(1, 1)});
+                                          Point(0, 0), Point(1, 0), Point(0, 1), Point(1, 1)});
     EXPECT_EQ(mesh->lines().size(), 5);
     EXPECT_EQ(mesh->triangles().size(), 2);
     EXPECT_EQ(mesh->flippableLines().size(), 1);
@@ -40,7 +40,7 @@ TEST(MeshTriangulationTest, Square_is2Triangles)
 TEST(MeshTriangulationTest, Square_flipped_is2Triangles)
 {
     auto mesh = MeshFactory::makeMesh({
-        Point(0, 0), Point(1, 0), Point(0, 1), Point(1, 1)});
+                                          Point(0, 0), Point(1, 0), Point(0, 1), Point(1, 1)});
     auto [l, lf] = *mesh->flippableLines().begin();
     mesh->flipLine(l);
     EXPECT_EQ(mesh->lines().size(), 5);
@@ -51,8 +51,8 @@ TEST(MeshTriangulationTest, Square_flipped_is2Triangles)
 TEST(MeshTriangulationTest, Square_flippedTwice_isIdentity)
 {
     auto mesh = MeshFactory::makeMesh({
-        Point(0, 0), Point(1, 0), Point(0, 1), Point(1, 1)
-    });
+                                          Point(0, 0), Point(1, 0), Point(0, 1), Point(1, 1)
+                                      });
     auto [l, lf] = *mesh->flippableLines().begin();
     mesh->flipLine(l);
     auto [l_f, lf_f] = *mesh->flippableLines().begin();
