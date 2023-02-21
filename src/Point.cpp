@@ -19,10 +19,9 @@ Point::Point(std::initializer_list<Point::ValueType>&& v)
 {
     if(v.size() != 2)
         throw std::out_of_range("Initializer list must be dimension 2");
-
-    std::size_t i = 0;
-    for(const auto& elem : v)
-        this->at(i++) = elem;
+    auto it = v.begin();
+    this->x = *(it++);
+    this->y = *it;
 }
 
 Point::~Point() = default;
@@ -37,21 +36,6 @@ bool Point::operator<(const Point& rhs) const
 bool Point::operator==(const Point& rhs) const
 {
     return this->x == rhs.x && this->y == rhs.y;
-}
-
-Point::ValueType& Point::at(std::size_t i)
-{
-    if(i >= 2)
-        throw std::out_of_range("Point has only 2 elements");
-
-    return i == 0 ? this->x : this->y;
-}
-
-std::string Point::toString() const
-{
-    std::ostringstream oss;
-    oss << "{" << this->x << "," << this->y << "}";
-    return oss.str();
 }
 
 double Point::distance(const Point& to) const
@@ -116,7 +100,7 @@ std::pair<Point, double> Point::circumcircle(const Point& p1, const Point& p2, c
     double p_norm2 = Point::dot(p, p);
     double q_norm2 = Point::dot(q, q);
     double den = 2.0 * Point::cross(p, q);
-    Point CC = {(q.y * p_norm2 - p.y * q_norm2) / den, (p.x * q_norm2 - q.x * p_norm2) / den};
+    Point CC{(q.y * p_norm2 - p.y * q_norm2) / den, (p.x * q_norm2 - q.x * p_norm2) / den};
     double radius = std::sqrt(Point::dot(CC, CC));
     CC += p1;
     return {CC, radius};

@@ -23,9 +23,7 @@ public:
     explicit MeshTriangulation(std::vector<Point>&& pt);
     ~MeshTriangulation();
 
-    //void triangulateDelaunay();
-    void triangulate();
-    void flipLine(const LineCell& l);
+    bool operator==(const MeshTriangulation& other) const;
 
     const std::vector<Point>& coordinates() const;
     const std::set<LineCell>& lines() const;
@@ -33,31 +31,30 @@ public:
     const std::unordered_map<LineCell, LineCell>& flippableLines() const;
     const std::unordered_map<LineCell, std::set<TriangleCell>>& edgeTriangleAdjacency() const;
 
-    bool operator==(const MeshTriangulation& other) const;
+    void triangulate();
+    void flipLine(const LineCell& l);
 
     std::string wkt() const;
     friend std::size_t hash_value(const MeshTriangulation& mesh);
-    const std::set<TriangleCell>& GetTriangles() const;
 
 private:
-    std::vector<Point> coord_;
-    std::set<LineCell> lines_;
-    std::set<TriangleCell> triangles_;
-    std::unordered_map<LineCell, std::set<TriangleCell>> edgeTrigAdj_;
-    std::unordered_map<LineCell, LineCell> flippable_;
-    std::size_t coordMeshHash_;
+    std::vector<Point> m_coords;
+    std::set<LineCell> m_lines;
+    std::set<TriangleCell> m_triangles;
+    std::unordered_map<LineCell, std::set<TriangleCell>> m_edgeTrigAdj;
+    std::unordered_map<LineCell, LineCell> m_flippable;
+    std::size_t m_coordMeshHash;
 
-    void init_();
-    void sweepHullSort_(std::vector<std::size_t>& idx, std::size_t pivot);
-    void sweepHullAdd_(std::list<std::size_t>& hull, std::size_t i);
-    void updateAdjacency_(const TriangleCell& t);
-    void updateAdjacency_(const TriangleCell& t, const LineCell& l1, const LineCell& l2, const LineCell& l3);
-    void computeConnectivity_();
-    void computeConnectivity_(const LineCell& l);
-    void updateFlippable_(const LineCell& l);
+    void init();
+    void sweepHullSort(std::vector<std::size_t>& idx, std::size_t pivot);
+    void sweepHullAdd(std::list<std::size_t>& hull, std::size_t i);
+    void updateAdjacency(const TriangleCell& t, const LineCell& l1, const LineCell& l2, const LineCell& l3);
+    void computeConnectivity();
+    void computeConnectivity(const LineCell& l);
+    void updateFlippable(const LineCell& l);
 
-    double triangleArea_(std::size_t a, std::size_t b, std::size_t c) const;
-    bool convexPolygon_(std::size_t i, std::size_t j, std::size_t k, std::size_t l) const;
+    double triangleArea(std::size_t a, std::size_t b, std::size_t c) const;
+    bool convexPolygon(std::size_t i, std::size_t j, std::size_t k, std::size_t l) const;
 };
 
 template<>

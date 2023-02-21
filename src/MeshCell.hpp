@@ -15,9 +15,6 @@ public:
     LineCell(const LineCell& l);
     ~LineCell();
 
-    void insert(std::size_t i);
-    std::size_t size() const;
-
     bool operator<(const LineCell& rhs) const;
     bool operator==(const LineCell& rhs) const;
 
@@ -34,8 +31,6 @@ public:
     TriangleCell(const TriangleCell& t);
     ~TriangleCell();
 
-    void insert(std::size_t i);
-    std::size_t size() const;
     std::size_t oppositePoint(const LineCell& l) const;
 
     bool operator<(const TriangleCell& rhs) const;

@@ -10,9 +10,9 @@ set(TEST_SRC
         unittest_Point.cpp
         unittest_MeshTriangulation.cpp)
 
-add_executable(test_triangulation-graph ${MAIN_SRC} ${TEST_SRC})
-set_property(TARGET test_triangulation-graph PROPERTY CXX_STANDARD 17)
-target_link_libraries(test_triangulation-graph GTest::gtest_main)
+add_executable(unittest_triangulation-graph ${MAIN_SRC} ${TEST_SRC})
+set_property(TARGET unittest_triangulation-graph PROPERTY CXX_STANDARD 17)
+target_link_libraries(unittest_triangulation-graph GTest::gtest_main)
 
 include(GoogleTest)
-gtest_discover_tests(test_triangulation-graph)
+gtest_discover_tests(unittest_triangulation-graph)
