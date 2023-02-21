@@ -3,9 +3,11 @@
 
 #include <iostream>
 #include <chrono>
+#include <memory>
 #include <random>
 #include <list>
 #include "Point.hpp"
+#include "MeshTriangulation.hpp"
 
 class ListUtil
 {
@@ -90,6 +92,25 @@ public:
 private:
     std::mt19937 eng_;
     std::uniform_real_distribution<> dist_;
+};
+
+class MeshFactory
+{
+public:
+    static std::unique_ptr<MeshTriangulation> makeMesh(const std::vector<Point>& coord)
+    {
+        std::unique_ptr<MeshTriangulation> mesh =
+            std::make_unique<MeshTriangulation>(coord);
+        mesh->triangulate();
+        return mesh;
+    }
+
+    static std::unique_ptr<MeshTriangulation> makeMeshSingle(double x)
+    {
+        return MeshFactory::makeMesh(
+            {Point(0, 0), Point(x, 0), Point(0, x)}
+        );
+    }
 };
 
 #endif //UTILS_HPP

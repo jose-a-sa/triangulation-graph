@@ -22,8 +22,7 @@ public:
     explicit MeshTriangulation(std::vector<Point>&& pt);
     ~MeshTriangulation();
 
-    void setCoordinates(const std::vector<Point>& pt);
-    void setCoordinates(std::vector<Point>&& pt);
+    //void triangulateDelaunay();
     void triangulate();
     void flipLine(const LineCell& l);
 
@@ -47,7 +46,6 @@ private:
     std::size_t coordMeshHash_;
 
     void init_();
-    void triangulate_();
     void sweepHullSort_(std::vector<std::size_t>& idx, std::size_t pivot);
     void sweepHullAdd_(std::list<std::size_t>& hull, std::size_t i);
     void computeConnectivity_();

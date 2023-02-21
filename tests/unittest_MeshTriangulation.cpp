@@ -1,27 +1,8 @@
 // unittest_SimpleMath.cpp
 
 #include <gtest/gtest.h>
-#include <memory>
 #include "../src/MeshTriangulation.hpp"
-
-class MeshFactory
-{
-public:
-    static std::unique_ptr<MeshTriangulation> makeMesh(const std::vector<Point>& coord)
-    {
-        std::unique_ptr<MeshTriangulation> mesh =
-            std::make_unique<MeshTriangulation>(coord);
-        mesh->triangulate();
-        return mesh;
-    }
-
-    static std::unique_ptr<MeshTriangulation> makeMeshSingle(double x)
-    {
-        return MeshFactory::makeMesh(
-            {Point(0, 0), Point(x, 0), Point(0, x)}
-        );
-    }
-};
+#include "../src/Utils.hpp"
 
 TEST(MeshTriangulationTest, Single_is1Triangle)
 {
