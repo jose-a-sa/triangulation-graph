@@ -28,6 +28,11 @@ public:
     void generateGraph();
     const std::vector<MeshTriangulation>& vertices() const;
     const std::unordered_set<std::pair<std::size_t, std::size_t>>& edges() const;
+#ifndef GTEST_NAME
+
+    friend class TriangulationFlipGraphFixture;
+
+#endif
 private:
     std::vector<MeshTriangulation> vertices_;
     std::unordered_map<std::size_t, std::size_t> indexMap_;

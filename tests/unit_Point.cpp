@@ -1,7 +1,7 @@
 // unittest_SimpleMath.cpp
 
 #include <gtest/gtest.h>
-#include "../src/Point.hpp"
+#include "Point.hpp"
 
 
 TEST(PointTest, Distance_3_4)

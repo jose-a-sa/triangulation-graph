@@ -1,13 +1,35 @@
 #include "MeshTriangulation.hpp"
 
-#include "Utils.hpp"
-
-#include <boost/assert.hpp>
 #include <boost/math/special_functions/relative_difference.hpp>
 #include <numeric>
 #include <algorithm>
 #include <iomanip>
 #include <list>
+
+template<typename T>
+class ListUtil
+{
+public:
+    using list_iterator = typename std::list<T>::iterator;
+    static list_iterator circularErase(std::list<T>& lst, list_iterator b, list_iterator e)
+    {
+        if(b == e)
+            return e;
+
+        list_iterator b_c = b;
+        while(b_c != e)
+        {
+            if(b_c++ == lst.end())
+            {
+                auto dist = std::distance(b, e) - 1;
+                lst.splice(lst.end(), lst, e, b);
+                return lst.erase(lst.begin(), std::next(lst.begin(), dist));
+            }
+        }
+
+        return lst.erase(b, e);
+    }
+};
 
 MeshTriangulation::MeshTriangulation() = default;
 
@@ -45,8 +67,8 @@ void MeshTriangulation::flipLine(const LineCell& l)
     auto& trigFlip1 = *m_triangles.emplace(lFlip.a, lFlip.b, l.a).first;
     auto& trigFlip2 = *m_triangles.emplace(lFlip.a, lFlip.b, l.b).first;
     TriangleCell trig1(l.a, l.b, lFlip.a), trig2(l.a, l.b, lFlip.b);
-    LineCell bdLine1 = LineCell(l.a, lFlip.a), bdLine2 = LineCell(l.a, lFlip.b);
-    LineCell bdLine3 = LineCell(lFlip.a, l.b), bdLine4 = LineCell(l.b, lFlip.b);
+    LineCell bdLine1(l.a, lFlip.a), bdLine2(l.a, lFlip.b);
+    LineCell bdLine3(lFlip.a, l.b), bdLine4(l.b, lFlip.b);
 
     m_lines.erase(l);
     m_triangles.erase(trig1);
@@ -58,12 +80,12 @@ void MeshTriangulation::flipLine(const LineCell& l)
     m_edgeTrigAdj[bdLine3].erase(trig1);
     m_edgeTrigAdj[bdLine4].erase(trig2);
 
-    m_lines.insert(lFlip);
-    m_triangles.insert(trigFlip1);
-    m_triangles.insert(trigFlip2);
     m_flippable[lFlip] = l;
     updateAdjacency(trigFlip1, bdLine1, bdLine2, lFlip);
     updateAdjacency(trigFlip2, bdLine3, bdLine4, lFlip);
+    m_lines.insert(std::move(lFlip));
+    m_triangles.insert(trigFlip1);
+    m_triangles.insert(trigFlip2);
     updateFlippable(bdLine1);
     updateFlippable(bdLine2);
     updateFlippable(bdLine3);
@@ -86,8 +108,6 @@ inline bool MeshTriangulation::convexPolygon(std::size_t i, std::size_t j, std::
     t1_f = triangleArea(j, k, l), t2_f = triangleArea(l, i, j);
 
     return boost::math::epsilon_difference(t1 + t2, t1_f + t2_f) < 3.0 &&
-        boost::math::epsilon_difference(t1, 0) > 3.0 &&
-        boost::math::epsilon_difference(t2, 0) > 3.0 &&
         boost::math::epsilon_difference(t1_f, 0) > 3.0 &&
         boost::math::epsilon_difference(t2_f, 0) > 3.0;
 }
@@ -112,6 +132,11 @@ const std::unordered_map<LineCell, LineCell>& MeshTriangulation::flippableLines(
     return this->m_flippable;
 }
 
+const std::unordered_map<LineCell, std::set<TriangleCell>>& MeshTriangulation::edgeTriangleAdjacency() const
+{
+    return this->m_edgeTrigAdj;
+}
+
 std::string MeshTriangulation::wkt() const
 {
     std::ostringstream oss;
@@ -131,22 +156,26 @@ std::string MeshTriangulation::wkt() const
 
 std::size_t hash_value(const MeshTriangulation& mesh)
 {
-    std::size_t seed = mesh.m_coordMeshHash;
+    boost::hash<TriangleCell> hasher{};
 
+    std::size_t seed = mesh.m_coordMeshHash;
     for(const auto& t : mesh.triangles())
-        boost::hash_combine(seed, boost::hash<TriangleCell>()(t));
+        boost::hash_combine(seed, hasher(t));
     return seed;
 }
 
 bool MeshTriangulation::operator==(const MeshTriangulation& other) const
 {
-    return hash_value(*this) == hash_value(other);
+    return this->coordinates() == other.coordinates() && this->triangles() == other.triangles();
 }
 
 void MeshTriangulation::triangulate()
 {
     m_lines.clear();
     m_triangles.clear();
+
+    if(m_coords.size() < 3)
+        return;
 
     std::size_t n = m_coords.size();
     std::vector<std::size_t> idx(n);
@@ -245,7 +274,8 @@ void MeshTriangulation::sweepHullAdd(std::list<std::size_t>& hull, std::size_t i
 
     bool visible_prev, visible = false;
     std::list<std::size_t>::iterator it, it_next, cut_b = hull.end(), cut_e = hull.end();
-    for(it = hull.begin(), it_next = circularNext(hull.begin()); it != hull.end(); it++, it_next = circularNext(it))
+    for(it = hull.begin(), it_next = circularNext(hull.begin());
+        it != hull.end(); it++, it_next = circularNext(it))
     {
         visible_prev = visible;
         visible = Point::cross(m_coords[i], m_coords[*it], m_coords[*it_next]) > 0;
@@ -265,10 +295,7 @@ void MeshTriangulation::sweepHullAdd(std::list<std::size_t>& hull, std::size_t i
 }
 
 void
-MeshTriangulation::updateAdjacency(const TriangleCell& t,
-                                   const LineCell& l1,
-                                   const LineCell& l2,
-                                   const LineCell& l3)
+MeshTriangulation::updateAdjacency(const TriangleCell& t, const LineCell& l1, const LineCell& l2, const LineCell& l3)
 {
     m_edgeTrigAdj[l1].insert(t);
     m_edgeTrigAdj[l2].insert(t);

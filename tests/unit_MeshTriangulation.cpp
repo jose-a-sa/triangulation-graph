@@ -1,8 +1,8 @@
 // unittest_SimpleMath.cpp
 
 #include <gtest/gtest.h>
-#include "../src/MeshTriangulation.hpp"
-#include "../src/Utils.hpp"
+#include "Factory.hpp"
+#include "MeshTriangulation.hpp"
 
 TEST(MeshTriangulationTest, Single_is1Triangle)
 {
@@ -55,6 +55,40 @@ TEST(MeshTriangulationTest, Square_flippedTwice_isIdentity)
     auto [l, lf] = *mesh->flippableLines().begin();
     mesh->flipLine(l);
     auto [l_f, lf_f] = *mesh->flippableLines().begin();
-    EXPECT_TRUE(l == lf_f);
-    EXPECT_TRUE(l_f == lf);
+    EXPECT_EQ(l, lf_f);
+    EXPECT_EQ(l_f, lf);
+}
+
+class MeshTriangulationFixture : public ::testing::Test
+{
+protected:
+    MeshTriangulation m_Mesh;
+};
+
+
+TEST_F(MeshTriangulationFixture, pointCopyConstructor)
+{
+    auto pts = PointFactory::randomSample(3, 0, 1);
+    m_Mesh = MeshTriangulation(pts);
+    std::sort(pts.begin(), pts.end());
+    EXPECT_EQ(m_Mesh.coordinates(), pts);
+
+    pts = {{0.5, 0.1}, {0.5, 0.1}, {0.5, 0.1}, {-0.1, 1.0}, {-0.1, 1.0}};
+    std::vector<Point> expectedSet({{-0.1, 1.0}, {0.5, 0.1}});
+    m_Mesh = MeshTriangulation(pts);
+    EXPECT_EQ(m_Mesh.coordinates(), expectedSet);
+}
+
+TEST_F(MeshTriangulationFixture, pointMoveConstructor)
+{
+    auto pts = PointFactory::randomSample(3, 0, 1);
+    auto pts_c = pts;
+    m_Mesh = MeshTriangulation(std::move(pts_c));
+    std::sort(pts.begin(), pts.end());
+    EXPECT_TRUE(m_Mesh.coordinates() == pts);
+
+    pts = {{0.5, 0.1}, {0.5, 0.1}, {0.5, 0.1}, {-0.1, 1.0}, {-0.1, 1.0}};
+    std::vector<Point> expectedSet({{-0.1, 1.0}, {0.5, 0.1}});
+    m_Mesh = MeshTriangulation(std::move(pts));
+    EXPECT_EQ(m_Mesh.coordinates(), expectedSet);
 }

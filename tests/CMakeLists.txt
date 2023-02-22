@@ -2,13 +2,19 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
 
+include_directories("../src/")
+
+add_executable(triangulation-graph-test ${MAIN_SRC} test.cpp)
+set_property(TARGET triangulation-graph-test PROPERTY CXX_STANDARD 17)
+target_compile_options(triangulation-graph-test PRIVATE -O0)
+
 find_package(GTest)
 
 enable_testing()
 
 set(TEST_SRC
-        unittest_Point.cpp
-        unittest_MeshTriangulation.cpp)
+        unit_Point.cpp
+        unit_MeshTriangulation.cpp)
 
 add_executable(unittest_triangulation-graph ${MAIN_SRC} ${TEST_SRC})
 set_property(TARGET unittest_triangulation-graph PROPERTY CXX_STANDARD 17)
