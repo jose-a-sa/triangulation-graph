@@ -34,9 +34,9 @@ public:
 
 #endif
 private:
-    std::vector<MeshTriangulation> vertices_;
-    std::unordered_map<std::size_t, std::size_t> indexMap_;
-    std::unordered_set<std::pair<std::size_t, std::size_t>> edges_;
+    std::vector<MeshTriangulation> m_vertices;
+    std::unordered_map<std::size_t, std::size_t> m_indexMap;
+    std::unordered_set<std::pair<std::size_t, std::size_t>> m_edges;
 };
 
 #endif //CONVEX_TRIANGULATIONS_TRIANGULATIONFLIPGRAPH_HPP

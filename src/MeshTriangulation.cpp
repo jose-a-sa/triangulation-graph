@@ -63,33 +63,21 @@ void MeshTriangulation::flipLine(const LineCell& l)
     if(!m_edgeTrigAdj.count(l) || !m_flippable.count(l))
         return;
 
+    std::size_t la = l.a, lb = l.b;
     LineCell lFlip = m_flippable.at(l);
-    auto& trigFlip1 = *m_triangles.emplace(lFlip.a, lFlip.b, l.a).first;
-    auto& trigFlip2 = *m_triangles.emplace(lFlip.a, lFlip.b, l.b).first;
-    TriangleCell trig1(l.a, l.b, lFlip.a), trig2(l.a, l.b, lFlip.b);
-    LineCell bdLine1(l.a, lFlip.a), bdLine2(l.a, lFlip.b);
-    LineCell bdLine3(lFlip.a, l.b), bdLine4(l.b, lFlip.b);
-
-    m_lines.erase(l);
-    m_triangles.erase(trig1);
-    m_triangles.erase(trig2);
-    m_flippable.erase(l);
     m_edgeTrigAdj.erase(l);
-    m_edgeTrigAdj[bdLine1].erase(trig1);
-    m_edgeTrigAdj[bdLine2].erase(trig2);
-    m_edgeTrigAdj[bdLine3].erase(trig1);
-    m_edgeTrigAdj[bdLine4].erase(trig2);
+    m_flippable.erase(l);
 
+    TriangleCell trig1(la, lb, lFlip.a), trig2(la, lb, lFlip.b);
+    TriangleCell trigFlip1(lFlip.a, lFlip.b, la), trigFlip2(lFlip.a, lFlip.b, lb);
+
+    m_edgeTrigAdj[lFlip] = std::make_tuple(true, trigFlip1, trigFlip2);
     m_flippable[lFlip] = l;
-    updateAdjacency(trigFlip1, bdLine1, bdLine2, lFlip);
-    updateAdjacency(trigFlip2, bdLine3, bdLine4, lFlip);
-    m_lines.insert(std::move(lFlip));
-    m_triangles.insert(trigFlip1);
-    m_triangles.insert(trigFlip2);
-    updateFlippable(bdLine1);
-    updateFlippable(bdLine2);
-    updateFlippable(bdLine3);
-    updateFlippable(bdLine4);
+
+    updateAdjacency(LineCell(l.a, lFlip.a), trig1, trigFlip1);
+    updateAdjacency(LineCell(l.a, lFlip.b), trig2, trigFlip1);
+    updateAdjacency(LineCell(lFlip.a, l.b), trig1, trigFlip2);
+    updateAdjacency(LineCell(l.b, lFlip.b), trig2, trigFlip2);
 }
 
 inline double MeshTriangulation::triangleArea(std::size_t a, std::size_t b, std::size_t c) const
@@ -103,6 +91,10 @@ inline double MeshTriangulation::triangleArea(std::size_t a, std::size_t b, std:
 
 inline bool MeshTriangulation::convexPolygon(std::size_t i, std::size_t j, std::size_t k, std::size_t l) const
 {
+    size_t n = m_coords.size();
+    if(i >= n || j >= n || k >= n || l >= n)
+        return false;
+
     double t1, t2, t1_f, t2_f;
     t1 = triangleArea(i, j, k), t2 = triangleArea(k, l, i);
     t1_f = triangleArea(j, k, l), t2_f = triangleArea(l, i, j);
@@ -117,14 +109,25 @@ const std::vector<Point>& MeshTriangulation::coordinates() const
     return this->m_coords;
 }
 
-const std::set<LineCell>& MeshTriangulation::lines() const
+std::vector<LineCell> MeshTriangulation::lines() const
 {
-    return this->m_lines;
+    std::vector<LineCell> res;
+    res.reserve(m_edgeTrigAdj.size());
+    for(auto& [l, _] : m_edgeTrigAdj)
+        res.push_back(l);
+    return res;
 }
 
-const std::set<TriangleCell>& MeshTriangulation::triangles() const
+std::vector<TriangleCell> MeshTriangulation::triangles() const
 {
-    return this->m_triangles;
+    std::set < TriangleCell > res;
+    for(auto& [_, t] : m_edgeTrigAdj)
+    {
+        res.insert(std::get<1>(t));
+        if(std::get<0>(t))
+            res.insert(std::get<2>(t));
+    }
+    return {res.begin(), res.end()};
 }
 
 const std::unordered_map<LineCell, LineCell>& MeshTriangulation::flippableLines() const
@@ -132,7 +135,7 @@ const std::unordered_map<LineCell, LineCell>& MeshTriangulation::flippableLines(
     return this->m_flippable;
 }
 
-const std::unordered_map<LineCell, std::set<TriangleCell>>& MeshTriangulation::edgeTriangleAdjacency() const
+const std::map<LineCell, std::tuple<bool, TriangleCell, TriangleCell>>& MeshTriangulation::edgeTriangleAdjacency() const
 {
     return this->m_edgeTrigAdj;
 }
@@ -156,23 +159,23 @@ std::string MeshTriangulation::wkt() const
 
 std::size_t hash_value(const MeshTriangulation& mesh)
 {
-    boost::hash<TriangleCell> hasher{};
+    boost::hash<LineCell> hasher{};
 
     std::size_t seed = mesh.m_coordMeshHash;
-    for(const auto& t : mesh.triangles())
-        boost::hash_combine(seed, hasher(t));
+    for(const auto& [l, _] : mesh.edgeTriangleAdjacency())
+        boost::hash_combine(seed, hasher(l));
     return seed;
 }
 
 bool MeshTriangulation::operator==(const MeshTriangulation& other) const
 {
-    return this->coordinates() == other.coordinates() && this->triangles() == other.triangles();
+    return this->coordinates() == other.coordinates() && this->lines() == other.lines();
 }
 
 void MeshTriangulation::triangulate()
 {
-    m_lines.clear();
-    m_triangles.clear();
+    m_flippable.clear();
+    m_edgeTrigAdj.clear();
 
     if(m_coords.size() < 3)
         return;
@@ -184,17 +187,11 @@ void MeshTriangulation::triangulate()
     sweepHullSort(idx, 0);
 
     std::list<std::size_t> hull(idx.begin(), std::next(idx.begin(), 3));
-    auto trig_it = m_triangles.emplace(idx[0], idx[1], idx[2]).first;
-    auto l1_it = m_lines.emplace(idx[0], idx[1]).first;
-    auto l2_it = m_lines.emplace(idx[1], idx[2]).first;
-    auto l3_it = m_lines.emplace(idx[2], idx[0]).first;
-    updateAdjacency(*trig_it, *l1_it, *l2_it, *l3_it);
+
+    insertAdjacency(TriangleCell(idx[0], idx[1], idx[2]));
 
     for(std::size_t i = 3; i < n; i++)
         sweepHullAdd(hull, idx[i]);
-
-    for(const LineCell& l : m_lines)
-        updateFlippable(l);
 }
 
 void MeshTriangulation::sweepHullSort(std::vector<std::size_t>& idx, std::size_t pivot = 0)
@@ -246,6 +243,7 @@ void MeshTriangulation::sweepHullSort(std::vector<std::size_t>& idx, std::size_t
         if(cross > 0)
             std::swap(idx[1], idx[2]);
 
+
         const auto& [cc, radius] = Point::circumcircle(
             m_coords[idx[0]], m_coords[idx[1]], m_coords[idx[2]]);
         if(std::isnan(radius))
@@ -282,10 +280,7 @@ void MeshTriangulation::sweepHullAdd(std::list<std::size_t>& hull, std::size_t i
         if(visible)
         {
             cut_b = visible_prev ^ visible ? it : cut_b;
-            auto trig_it = m_triangles.emplace(i, *it, *it_next).first;
-            auto l1_it = m_lines.emplace(i, *it).first;
-            auto l2_it = m_lines.emplace(i, *it_next).first;
-            updateAdjacency(*trig_it, *l1_it, *l2_it, LineCell(*it, *it_next));
+            insertAdjacency(TriangleCell(i, *it, *it_next));
         }
         else
             cut_e = visible_prev ^ visible ? it : cut_e;
@@ -294,35 +289,64 @@ void MeshTriangulation::sweepHullAdd(std::list<std::size_t>& hull, std::size_t i
     hull.insert(ListUtil<std::size_t>::circularErase(hull, std::next(cut_b), cut_e), i);
 }
 
-void
-MeshTriangulation::updateAdjacency(const TriangleCell& t, const LineCell& l1, const LineCell& l2, const LineCell& l3)
+void MeshTriangulation::updateAdjacency(const LineCell& l,
+                                        const TriangleCell& t,
+                                        const TriangleCell& newT)
 {
-    m_edgeTrigAdj[l1].insert(t);
-    m_edgeTrigAdj[l2].insert(t);
-    m_edgeTrigAdj[l3].insert(t);
-}
+    auto& [internal, t1, t2] = m_edgeTrigAdj[l];
+    if(t1 == t)
+        t1 = newT;
+    else if(t2 == t)
+        t2 = newT;
 
-void MeshTriangulation::updateFlippable(const LineCell& l)
-{
     m_flippable.erase(l);
 
-    if(!m_edgeTrigAdj.count(l))
-        return;
-    if(m_edgeTrigAdj.at(l).size() != 2)
+    if(!internal)
         return;
 
-    std::size_t lf_a, lf_b;
-    auto trig_it = m_edgeTrigAdj.at(l).begin();
-    lf_a = trig_it->oppositePoint(l);
-    std::advance(trig_it, 1);
-    lf_b = trig_it->oppositePoint(l);
-
-    if(lf_a == -1 || lf_b == -1)
-        return;
-
-    if(!convexPolygon(l.a, lf_a, l.b, lf_b))
-        return;
-
-    m_flippable[l] = LineCell(lf_a, lf_b);
+    // update flippable
+    std::size_t lf_a = t1.oppositePoint(l), lf_b = t2.oppositePoint(l);
+    if(convexPolygon(l.a, lf_a, l.b, lf_b))
+        m_flippable[l] = LineCell(lf_a, lf_b);
 }
 
+void MeshTriangulation::insertAdjacency(const TriangleCell& t)
+{
+    TriangleCell empty;
+    for(auto& l : {LineCell{t.a, t.b}, LineCell{t.a, t.c}, LineCell{t.b, t.c}})
+    {
+        auto& [internal, t1, t2] = m_edgeTrigAdj[l];
+        if(t1 == empty)
+            t1 = t, internal = false;
+        else if(t2 == empty)
+        {
+            t2 = t, internal = true;
+
+            // update flippable
+            std::size_t lf_a = t1.oppositePoint(l), lf_b = t2.oppositePoint(l);
+            if(convexPolygon(l.a, lf_a, l.b, lf_b))
+                m_flippable[l] = LineCell(lf_a, lf_b);
+        }
+    }
+}
+
+//void MeshTriangulation::updateFlippable(const LineCell& l)
+//{
+//    m_flippable.erase(l);
+//
+//    if(!m_edgeTrigAdj.count(l))
+//        return;
+//
+//    auto& [internal, t1, t2] = m_edgeTrigAdj[l];
+//    if(!internal)
+//        return;
+//
+//    std::size_t lf_a = t1.oppositePoint(l), lf_b = t2.oppositePoint(l);
+//    if(lf_a == -1 || lf_b == -1)
+//        return;
+//
+//    if(!convexPolygon(l.a, lf_a, l.b, lf_b))
+//        return;
+//
+//    m_flippable[l] = LineCell(lf_a, lf_b);
+//}
