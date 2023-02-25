@@ -11,7 +11,7 @@ TriangulationFlipGraph::TriangulationFlipGraph(const std::vector<Point>& pts)
 TriangulationFlipGraph::TriangulationFlipGraph(std::vector<Point>&& pts)
 {
     m_vertices.emplace_back(std::move(pts));
-    m_vertices[0].triangulate();;
+    m_vertices[0].triangulate();
 }
 
 void TriangulationFlipGraph::generateGraph()

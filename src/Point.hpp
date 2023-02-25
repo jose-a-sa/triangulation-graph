@@ -23,7 +23,7 @@ public:
     Point operator-(const Point& rhs) const;
     Point& operator+=(const Point& rhs);
     Point& operator-=(const Point& rhs);
-    double distance(const Point& to) const;
+    [[nodiscard]] double distance(const Point& to) const;
     friend std::size_t hash_value(const Point& pt);
     static double dot(const Point& lhs, const Point& rhs);
     static double cross(const Point& lhs, const Point& rhs);

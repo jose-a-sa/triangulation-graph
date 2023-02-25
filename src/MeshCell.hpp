@@ -5,20 +5,21 @@
 #include <functional>
 #include <iostream>
 
-class LineCell
+class EdgeCell
 {
 public:
     std::size_t a, b;
 
-    LineCell();
-    explicit LineCell(std::size_t a, std::size_t b);
-    LineCell(const LineCell& l);
-    ~LineCell();
+    EdgeCell();
+    explicit EdgeCell(std::size_t a, std::size_t b);
+    EdgeCell(const EdgeCell& l);
+    ~EdgeCell();
 
-    bool operator<(const LineCell& rhs) const;
-    bool operator==(const LineCell& rhs) const;
+    bool undefined() const;
+    bool operator<(const EdgeCell& rhs) const;
+    bool operator==(const EdgeCell& rhs) const;
 
-    friend std::size_t hash_value(const LineCell& l);
+    friend std::size_t hash_value(const EdgeCell& l);
 };
 
 class TriangleCell
@@ -31,7 +32,8 @@ public:
     TriangleCell(const TriangleCell& t);
     ~TriangleCell();
 
-    std::size_t oppositePoint(const LineCell& l) const;
+    [[nodiscard]] std::size_t oppositePoint(const EdgeCell& l) const;
+    [[nodiscard]] bool undefined() const;
 
     bool operator<(const TriangleCell& rhs) const;
     bool operator==(const TriangleCell& rhs) const;
@@ -40,16 +42,16 @@ public:
     friend std::size_t hash_value(const TriangleCell& l);
 };
 
-std::ostream& operator<<(std::ostream& out, const LineCell& t);
+std::ostream& operator<<(std::ostream& out, const EdgeCell& t);
 
 std::ostream& operator<<(std::ostream& out, const TriangleCell& t);
 
 template<>
-struct std::hash<LineCell>
+struct std::hash<EdgeCell>
 {
-    std::size_t operator()(const LineCell& l) const
+    std::size_t operator()(const EdgeCell& l) const
     {
-        return boost::hash<LineCell>()(l);
+        return boost::hash<EdgeCell>()(l);
     }
 };
 

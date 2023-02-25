@@ -1,29 +1,34 @@
 #include "MeshCell.hpp"
 
-LineCell::LineCell()
+EdgeCell::EdgeCell()
     : a(-1), b(-1)
 {
 }
 
-LineCell::LineCell(std::size_t a, std::size_t b)
+EdgeCell::EdgeCell(std::size_t a, std::size_t b)
     : a(a), b(b)
 {
     if(this->a > this->b)
         std::swap(this->a, this->b);
 }
 
-LineCell::LineCell(const LineCell& l) = default;
+EdgeCell::EdgeCell(const EdgeCell& l) = default;
 
-LineCell::~LineCell() = default;
+EdgeCell::~EdgeCell() = default;
 
-bool LineCell::operator<(const LineCell& rhs) const
+bool EdgeCell::operator<(const EdgeCell& rhs) const
 {
     return (this->a != rhs.a) ? this->a < rhs.a : this->b < rhs.b;
 }
 
-bool LineCell::operator==(const LineCell& rhs) const
+bool EdgeCell::operator==(const EdgeCell& rhs) const
 {
     return this->a == rhs.a && this->b == rhs.b;
+}
+
+bool EdgeCell::undefined() const
+{
+    return this->a >= this->b || this->b == -1 || this->a == -1;
 }
 
 TriangleCell::TriangleCell()
@@ -66,7 +71,7 @@ bool TriangleCell::operator!=(const TriangleCell& rhs) const
     return !this->operator==(rhs);
 }
 
-std::size_t TriangleCell::oppositePoint(const LineCell& l) const
+std::size_t TriangleCell::oppositePoint(const EdgeCell& l) const
 {
     if(this->a == l.a)
     {
@@ -81,7 +86,7 @@ std::size_t TriangleCell::oppositePoint(const LineCell& l) const
     return -1;
 }
 
-std::ostream& operator<<(std::ostream& out, const LineCell& l)
+std::ostream& operator<<(std::ostream& out, const EdgeCell& l)
 {
     out << "{" << l.a << "," << l.b << "}";
     return out;
@@ -93,7 +98,7 @@ std::ostream& operator<<(std::ostream& out, const TriangleCell& t)
     return out;
 }
 
-std::size_t hash_value(const LineCell& l)
+std::size_t hash_value(const EdgeCell& l)
 {
     std::size_t seed = 0;
     boost::hash_combine(seed, l.a);
@@ -108,4 +113,9 @@ std::size_t hash_value(const TriangleCell& t)
     boost::hash_combine(seed, t.b);
     boost::hash_combine(seed, t.c);
     return seed;
+}
+
+bool TriangleCell::undefined() const
+{
+    return this->a >= this->b || this->b >= this->c || this->c == -1 || this->b == -1 || this->a == -1;
 }

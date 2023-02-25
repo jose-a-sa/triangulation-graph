@@ -26,8 +26,8 @@ public:
     explicit TriangulationFlipGraph(const std::vector<Point>& pts);
     explicit TriangulationFlipGraph(std::vector<Point>&& pts);
     void generateGraph();
-    const std::vector<MeshTriangulation>& vertices() const;
-    const std::unordered_set<std::pair<std::size_t, std::size_t>>& edges() const;
+    [[nodiscard]] const std::vector<MeshTriangulation>& vertices() const;
+    [[nodiscard]] const std::unordered_set<std::pair<std::size_t, std::size_t>>& edges() const;
 #ifndef GTEST_NAME
 
     friend class TriangulationFlipGraphFixture;
