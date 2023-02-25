@@ -60,7 +60,7 @@ public:
             double acc = 0;
             for(std::size_t i = 0; i < sz; i++)
                 acc += m_samples[i];
-            std::cout << m_msg << ": " << acc / sz << "us\n";
+            std::cout << m_msg << ": " << acc / static_cast<double>(sz) << "us\n";
         }
     }
     void StartMeasure()

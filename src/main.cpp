@@ -72,7 +72,7 @@ int main(int argc, const char* argv[])
     gr.generateGraph();
 
     for(const auto& mesh : gr.vertices())
-        std::cout << mesh.wkt() << std::endl;
+        std::cout << mesh.toString() << std::endl;
     for(const auto& [h, t] : gr.edges())
         std::cout << "{" << h << "," << t << "} ";
     std::cout << std::endl;
