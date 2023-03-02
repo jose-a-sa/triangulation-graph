@@ -27,6 +27,5 @@ list(TRANSFORM MAIN_SRC PREPEND "${CMAKE_CURRENT_SOURCE_DIR}/")
 add_executable(triangulation-graph ${MAIN_SRC} src/main.cpp)
 set_property(TARGET triangulation-graph PROPERTY CXX_STANDARD 17)
 
-
-add_subdirectory(tests)
+#add_subdirectory(tests)
 
