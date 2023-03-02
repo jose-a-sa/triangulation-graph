@@ -12,6 +12,12 @@ Take for example a set of points given by _(-1,-1) (-1,0) (-1,1) (0,-1) (0,0) (0
 ./triangulation-graph "(-1,-1) (-1,0) (-1,1) (0,-1) (0,0) (0,1) (1,-1)"
 ```
 
+***Note:*** The number of triangulations of a set of $n$ points in the plane growns exponentially with $n$.
+
+<img width="618" alt="Untitled" src="https://user-images.githubusercontent.com/13206784/222421996-70b2c408-6252-4147-bb75-7a4c2e7f56d6.png">
+The average counts and time are obtained by taking a sample of uniformly distributed points.
+
+
 ## Output
 
 The program outputs all the possible triangulations as a list of 3-tuples of points.
