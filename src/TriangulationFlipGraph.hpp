@@ -24,7 +24,6 @@ class TriangulationFlipGraph
 {
 public:
     explicit TriangulationFlipGraph(const std::vector<Point>& pts);
-    explicit TriangulationFlipGraph(std::vector<Point>&& pts);
     void generateGraph();
     [[nodiscard]] const std::vector<MeshTriangulation>& vertices() const;
     [[nodiscard]] const std::unordered_set<std::pair<std::size_t, std::size_t>>& edges() const;
@@ -33,7 +32,10 @@ public:
     friend class TriangulationFlipGraphFixture;
 
 #endif
+protected:
+    void init();
 private:
+    std::shared_ptr<std::vector<Point>> mp_coords;
     std::vector<MeshTriangulation> m_vertices;
     std::unordered_map<std::size_t, std::size_t> m_indexMap;
     std::unordered_set<std::pair<std::size_t, std::size_t>> m_edges;

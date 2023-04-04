@@ -21,10 +21,7 @@ struct EdgeAdjacency
 class MeshTriangulation
 {
 public:
-    MeshTriangulation();
-    explicit MeshTriangulation(const std::vector<Point>& pt);
-    explicit MeshTriangulation(std::vector<Point>&& pt);
-    ~MeshTriangulation();
+    explicit MeshTriangulation(std::weak_ptr<std::vector<Point>> pts);
 
     bool operator==(const MeshTriangulation& other) const;
 
@@ -47,19 +44,17 @@ public:
 #endif
 
 private:
-    std::vector<Point> m_coords;
+    std::weak_ptr<std::vector<Point>> mp_coords;
     std::map<EdgeCell, EdgeAdjacency> m_edgeTrigAdj;
     std::unordered_map<EdgeCell, EdgeCell> m_flippable;
-    std::size_t m_coordMeshHash = 0;
 
-    void init();
-    void sweepHullSort(std::vector<std::size_t>& idx, std::size_t pivot);
-    void sweepHullAdd(std::list<std::size_t>& hull, std::size_t i);
+    static void sweepHullSort(const std::vector<Point>& coords, std::vector<std::size_t>& idx, std::size_t pivot);
+    void sweepHullAdd(const std::vector<Point>& coords, std::list<std::size_t>& hull, std::size_t i);
     void updateAdjacency(const EdgeCell& l, const TriangleCell& t, const TriangleCell& newT);
     void insertAdjacency(const TriangleCell& t);
 
-    [[nodiscard]] std::double_t triangleArea(std::size_t a, std::size_t b, std::size_t c) const;
-    [[nodiscard]] bool convexPolygon(std::size_t i, std::size_t j, std::size_t k, std::size_t l) const;
+    bool convexPolygon(std::size_t i, std::size_t j, std::size_t k, std::size_t l) const;
+    static std::double_t triangleArea(const std::vector<Point>& coords, std::size_t a, std::size_t b, std::size_t c);
 };
 
 template<>
