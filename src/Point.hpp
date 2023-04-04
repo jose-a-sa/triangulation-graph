@@ -11,7 +11,7 @@
 class Point
 {
 public:
-    using ValueType = double;
+    using ValueType = std::double_t;
     ValueType x, y;
     Point();
     explicit Point(ValueType x, ValueType y);
@@ -23,12 +23,12 @@ public:
     Point operator-(const Point& rhs) const;
     Point& operator+=(const Point& rhs);
     Point& operator-=(const Point& rhs);
-    [[nodiscard]] double distance(const Point& to) const;
+    [[nodiscard]] std::double_t distance(const Point& to) const;
     friend std::size_t hash_value(const Point& pt);
-    static double dot(const Point& lhs, const Point& rhs);
-    static double cross(const Point& lhs, const Point& rhs);
-    static double cross(const Point& p1, const Point& p2, const Point& p3);
-    static std::pair<Point, double> circumcircle(const Point& p1, const Point& p2, const Point& p3);
+    static std::double_t dot(const Point& lhs, const Point& rhs);
+    static std::double_t cross(const Point& lhs, const Point& rhs);
+    static std::double_t cross(const Point& p1, const Point& p2, const Point& p3);
+    static std::pair<Point, std::double_t> circumcircle(const Point& p1, const Point& p2, const Point& p3);
 };
 
 template<>

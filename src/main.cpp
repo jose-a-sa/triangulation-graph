@@ -9,12 +9,12 @@
 
 void parseArgument(std::vector<Point>& res, const std::string& sv)
 {
-    auto numParser = [&](const std::string& s) -> double
+    auto numParser = [&](const std::string& s) -> std::double_t
     {
-        double res;
+        std::double_t res;
         try
         {
-            res = boost::lexical_cast<double>(s);
+            res = boost::lexical_cast<std::double_t>(s);
         }
         catch(const boost::bad_lexical_cast& e)
         {

@@ -11,7 +11,7 @@
 class PointFactory
 {
 public:
-    static std::vector<Point> randomSample(std::size_t n = 1, double a = 0.0, double b = 1.0)
+    static std::vector<Point> randomSample(std::size_t n = 1, std::double_t a = 0.0, std::double_t b = 1.0)
     {
         std::random_device rd;
         std::mt19937 eng(rd());
@@ -38,7 +38,7 @@ public:
         return mesh;
     }
 
-    static std::unique_ptr<MeshTriangulation> makeMeshSingle(double x)
+    static std::unique_ptr<MeshTriangulation> makeMeshSingle(std::double_t x)
     {
         return MeshFactory::makeMesh(
             {Point(0, 0), Point(x, 0), Point(0, x)}
