@@ -58,7 +58,7 @@ private:
     void updateAdjacency(const EdgeCell& l, const TriangleCell& t, const TriangleCell& newT);
     void insertAdjacency(const TriangleCell& t);
 
-    [[nodiscard]] double triangleArea(std::size_t a, std::size_t b, std::size_t c) const;
+    [[nodiscard]] std::double_t triangleArea(std::size_t a, std::size_t b, std::size_t c) const;
     [[nodiscard]] bool convexPolygon(std::size_t i, std::size_t j, std::size_t k, std::size_t l) const;
 };
 

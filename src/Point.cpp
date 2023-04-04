@@ -38,7 +38,7 @@ bool Point::operator==(const Point& rhs) const
     return this->x == rhs.x && this->y == rhs.y;
 }
 
-double Point::distance(const Point& to) const
+std::double_t Point::distance(const Point& to) const
 {
     return std::sqrt((this->x - to.x) * (this->x - to.x) + (this->y - to.y) * (this->y - to.y));
 }
@@ -79,29 +79,29 @@ std::size_t hash_value(const Point& pt)
     return seed; // or use boost::hash_combine
 }
 
-double Point::dot(const Point& lhs, const Point& rhs)
+std::double_t Point::dot(const Point& lhs, const Point& rhs)
 {
     return lhs.x * rhs.x + lhs.y * rhs.y;
 }
 
-double Point::cross(const Point& lhs, const Point& rhs)
+std::double_t Point::cross(const Point& lhs, const Point& rhs)
 {
     return lhs.x * rhs.y - lhs.y * rhs.x;
 }
 
-double Point::cross(const Point& p1, const Point& p2, const Point& p3)
+std::double_t Point::cross(const Point& p1, const Point& p2, const Point& p3)
 {
     return (p2.x - p1.x) * (p3.y - p1.y) - (p2.y - p1.y) * (p3.x - p1.x);
 }
 
-std::pair<Point, double> Point::circumcircle(const Point& p1, const Point& p2, const Point& p3)
+std::pair<Point, std::double_t> Point::circumcircle(const Point& p1, const Point& p2, const Point& p3)
 {
     Point p = p2 - p1, q = p3 - p1;
-    double p_norm2 = Point::dot(p, p);
-    double q_norm2 = Point::dot(q, q);
-    double den = 2.0 * Point::cross(p, q);
+    std::double_t p_norm2 = Point::dot(p, p);
+    std::double_t q_norm2 = Point::dot(q, q);
+    std::double_t den = 2.0 * Point::cross(p, q);
     Point CC{(q.y * p_norm2 - p.y * q_norm2) / den, (p.x * q_norm2 - q.x * p_norm2) / den};
-    double radius = std::sqrt(Point::dot(CC, CC));
+    std::double_t radius = std::sqrt(Point::dot(CC, CC));
     CC += p1;
     return {CC, radius};
 }
