@@ -15,7 +15,7 @@ public:
     EdgeCell(const EdgeCell& l);
     ~EdgeCell();
 
-    bool undefined() const;
+    [[nodiscard]] bool undefined() const;
     bool operator<(const EdgeCell& rhs) const;
     bool operator==(const EdgeCell& rhs) const;
 

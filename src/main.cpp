@@ -68,7 +68,7 @@ int main(int argc, const char* argv[])
     std::vector<Point> coords;
     parseArgument(coords, arg_coords);
 
-    TriangulationFlipGraph gr(std::move(coords));
+    TriangulationFlipGraph gr(coords);
     gr.generateGraph();
 
     for(const auto& mesh : gr.vertices())

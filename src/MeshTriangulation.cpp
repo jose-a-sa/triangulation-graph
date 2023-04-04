@@ -6,6 +6,7 @@
 #include <iomanip>
 #include <list>
 #include <set>
+#include <utility>
 
 template<typename T>
 class ListUtil
@@ -32,31 +33,9 @@ public:
     }
 };
 
-MeshTriangulation::MeshTriangulation() = default;
-
-MeshTriangulation::MeshTriangulation(const std::vector<Point>& pt)
-    : m_coords(pt), m_coordMeshHash(0)
+MeshTriangulation::MeshTriangulation(std::weak_ptr<std::vector<Point>> pts)
+    : mp_coords(std::move(pts))
 {
-    init();
-}
-
-MeshTriangulation::MeshTriangulation(std::vector<Point>&& pt)
-    : m_coords(std::move(pt)), m_coordMeshHash(0)
-{
-    init();
-}
-
-MeshTriangulation::~MeshTriangulation() = default;
-
-void MeshTriangulation::init()
-{
-    std::set<Point> st(m_coords.begin(), m_coords.end());
-    m_coords.assign(st.begin(), st.end());
-
-    boost::hash<Point> hasher{};
-    this->m_coordMeshHash = 0;
-    for(const auto& p : this->coordinates())
-        boost::hash_combine(this->m_coordMeshHash, hasher(p));
 }
 
 void MeshTriangulation::flipLine(const EdgeCell& l)
@@ -81,24 +60,28 @@ void MeshTriangulation::flipLine(const EdgeCell& l)
     updateAdjacency(EdgeCell(l.b, lFlip.b), trig2, trigFlip2);
 }
 
-inline std::double_t MeshTriangulation::triangleArea(std::size_t a, std::size_t b, std::size_t c) const
+inline std::double_t
+MeshTriangulation::triangleArea(const std::vector<Point>& coords, std::size_t a, std::size_t b, std::size_t c)
 {
     std::double_t s1, s2, s3;
-    s1 = m_coords[a].distance(m_coords[b]);
-    s2 = m_coords[a].distance(m_coords[c]);
-    s3 = m_coords[b].distance(m_coords[c]);
+    s1 = coords[a].distance(coords[b]);
+    s2 = coords[a].distance(coords[c]);
+    s3 = coords[b].distance(coords[c]);
     return 0.25 * sqrt((s1 + s2 + s3) * (-s1 + s2 + s3) * (s1 - s2 + s3) * (s1 + s2 - s3));
 }
 
 inline bool MeshTriangulation::convexPolygon(std::size_t i, std::size_t j, std::size_t k, std::size_t l) const
 {
-    size_t n = m_coords.size();
+    BOOST_ASSERT_MSG(!mp_coords.expired(), "vector<Point> pointer has expired");
+    auto& coords = *mp_coords.lock();
+
+    std::size_t n = coords.size();
     if(i >= n || j >= n || k >= n || l >= n)
         return false;
 
     std::double_t t1, t2, t1_f, t2_f;
-    t1 = triangleArea(i, j, k), t2 = triangleArea(k, l, i);
-    t1_f = triangleArea(j, k, l), t2_f = triangleArea(l, i, j);
+    t1 = triangleArea(coords, i, j, k), t2 = triangleArea(coords, k, l, i);
+    t1_f = triangleArea(coords, j, k, l), t2_f = triangleArea(coords, l, i, j);
 
     return boost::math::epsilon_difference(t1 + t2, t1_f + t2_f) < 3.0 &&
         boost::math::epsilon_difference(t1_f, 0) > 3.0 &&
@@ -107,7 +90,10 @@ inline bool MeshTriangulation::convexPolygon(std::size_t i, std::size_t j, std::
 
 const std::vector<Point>& MeshTriangulation::coordinates() const
 {
-    return this->m_coords;
+    BOOST_ASSERT_MSG(!mp_coords.expired(), "vector<Point> pointer has expired");
+    auto& coords = *mp_coords.lock();
+
+    return coords;
 }
 
 std::vector<EdgeCell> MeshTriangulation::lines() const
@@ -144,15 +130,18 @@ const std::map<EdgeCell, EdgeAdjacency>& MeshTriangulation::edgeTriangleAdjacenc
 
 std::string MeshTriangulation::toString() const
 {
+    BOOST_ASSERT_MSG(!mp_coords.expired(), "vector<Point> pointer has expired");
+    auto& coords = *mp_coords.lock();
+
     std::ostringstream oss;
     oss.precision(std::numeric_limits<std::double_t>::max_digits10);
     oss << "(";
     for(const auto& t : triangles())
     {
         oss << "(";
-        oss << m_coords[t.a].x << " " << m_coords[t.a].y << ",";
-        oss << m_coords[t.b].x << " " << m_coords[t.b].y << ",";
-        oss << m_coords[t.c].x << " " << m_coords[t.c].y;
+        oss << coords[t.a].x << " " << coords[t.a].y << ",";
+        oss << coords[t.b].x << " " << coords[t.b].y << ",";
+        oss << coords[t.c].x << " " << coords[t.c].y;
         oss << (t != *std::prev(triangles().end()) ? "), " : ")");
     }
     oss << ")";
@@ -163,7 +152,7 @@ std::size_t hash_value(const MeshTriangulation& mesh)
 {
     boost::hash<EdgeCell> hasher{};
 
-    std::size_t seed = mesh.m_coordMeshHash;
+    std::size_t seed = 0;
     for(const auto& [l, _] : mesh.edgeTriangleAdjacency())
         boost::hash_combine(seed, hasher(l));
     return seed;
@@ -176,27 +165,29 @@ bool MeshTriangulation::operator==(const MeshTriangulation& other) const
 
 void MeshTriangulation::triangulate()
 {
+    BOOST_ASSERT_MSG(!mp_coords.expired(), "vector<Point> pointer has expired");
+    auto& coords = *mp_coords.lock();
+    std::size_t n = coords.size();
+
     m_flippable.clear();
     m_edgeTrigAdj.clear();
 
-    if(m_coords.size() < 3)
+    if(n < 3)
         return;
 
-    std::size_t n = m_coords.size();
     std::vector<std::size_t> idx(n);
     std::iota(idx.begin(), idx.end(), 0);
-
-    sweepHullSort(idx, 0);
+    sweepHullSort(coords, idx, 0);
 
     std::list<std::size_t> hull(idx.begin(), std::next(idx.begin(), 3));
-
     insertAdjacency(TriangleCell(idx[0], idx[1], idx[2]));
 
     for(std::size_t i = 3; i < n; i++)
-        sweepHullAdd(hull, idx[i]);
+        sweepHullAdd(coords, hull, idx[i]);
 }
 
-void MeshTriangulation::sweepHullSort(std::vector<std::size_t>& idx, std::size_t pivot = 0)
+void
+MeshTriangulation::sweepHullSort(const std::vector<Point>& coords, std::vector<std::size_t>& idx, std::size_t pivot = 0)
 {
     size_t n = idx.size();
 
@@ -206,10 +197,10 @@ void MeshTriangulation::sweepHullSort(std::vector<std::size_t>& idx, std::size_t
         std::swap(idx[0], idx[i0 % n]);
 
         std::size_t i1 = 1;
-        std::double_t minDist = m_coords[idx[0]].distance(m_coords[idx[1]]);
+        std::double_t minDist = coords[idx[0]].distance(coords[idx[1]]);
         for(std::size_t k = 2; k < n; k++)
         {
-            std::double_t currDist = m_coords[idx[0]].distance(m_coords[idx[k]]);
+            std::double_t currDist = coords[idx[0]].distance(coords[idx[k]]);
             if(minDist > currDist)
             {
                 minDist = currDist;
@@ -219,7 +210,7 @@ void MeshTriangulation::sweepHullSort(std::vector<std::size_t>& idx, std::size_t
         std::swap(idx[1], idx[i1]);
 
         std::size_t i2 = 2;
-        std::double_t min_r = Point::circumcircle(m_coords[idx[0]], m_coords[idx[1]], m_coords[idx[2]]).second;
+        std::double_t min_r = Point::circumcircle(coords[idx[0]], coords[idx[1]], coords[idx[2]]).second;
         if(std::isnan(min_r))
         {
             ++i0;
@@ -227,7 +218,7 @@ void MeshTriangulation::sweepHullSort(std::vector<std::size_t>& idx, std::size_t
         }
         for(std::size_t k = 3; k < n; k++)
         {
-            std::double_t curr_r = Point::circumcircle(m_coords[idx[0]], m_coords[idx[1]], m_coords[idx[k]]).second;
+            std::double_t curr_r = Point::circumcircle(coords[idx[0]], coords[idx[1]], coords[idx[k]]).second;
             if(!std::isnan(curr_r) && min_r > curr_r)
             {
                 min_r = curr_r;
@@ -236,7 +227,7 @@ void MeshTriangulation::sweepHullSort(std::vector<std::size_t>& idx, std::size_t
         }
         std::swap(idx[2], idx[i2]);
 
-        std::double_t cross = Point::cross(m_coords[idx[0]], m_coords[idx[1]], m_coords[idx[2]]);
+        std::double_t cross = Point::cross(coords[idx[0]], coords[idx[1]], coords[idx[2]]);
         if(boost::math::epsilon_difference(cross, 0) < 3.0)
         {
             ++i0;
@@ -247,7 +238,7 @@ void MeshTriangulation::sweepHullSort(std::vector<std::size_t>& idx, std::size_t
 
 
         const auto& [cc, radius] = Point::circumcircle(
-            m_coords[idx[0]], m_coords[idx[1]], m_coords[idx[2]]);
+            coords[idx[0]], coords[idx[1]], coords[idx[2]]);
         if(std::isnan(radius))
         {
             ++i0;
@@ -257,9 +248,9 @@ void MeshTriangulation::sweepHullSort(std::vector<std::size_t>& idx, std::size_t
         if(n > 4)
         {
             std::sort(std::next(idx.begin(), 3), idx.end(),
-                      [&CC = cc, this](std::size_t i, std::size_t j) -> bool
+                      [&CC = cc, &coords = coords](std::size_t i, std::size_t j) -> bool
                       {
-                          return CC.distance(m_coords[i]) < CC.distance(m_coords[j]);
+                          return CC.distance(coords[i]) < CC.distance(coords[j]);
                       });
         }
 
@@ -267,7 +258,7 @@ void MeshTriangulation::sweepHullSort(std::vector<std::size_t>& idx, std::size_t
     }
 }
 
-void MeshTriangulation::sweepHullAdd(std::list<std::size_t>& hull, std::size_t i)
+void MeshTriangulation::sweepHullAdd(const std::vector<Point>& coords, std::list<std::size_t>& hull, std::size_t i)
 {
     auto circularNext = [&](std::list<std::size_t>::iterator it)
     { return std::next(it) == hull.end() ? std::next(it, 2) : std::next(it); };
@@ -279,7 +270,7 @@ void MeshTriangulation::sweepHullAdd(std::list<std::size_t>& hull, std::size_t i
         it++, it_next = circularNext(it))
     {
         visible_prev = visible;
-        visible = Point::cross(m_coords[i], m_coords[*it], m_coords[*it_next]) > 0;
+        visible = Point::cross(coords[i], coords[*it], coords[*it_next]) > 0;
         if(visible)
         {
             cut_b = visible_prev ^ visible ? it : cut_b;

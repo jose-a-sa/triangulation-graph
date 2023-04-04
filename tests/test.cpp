@@ -19,7 +19,8 @@ int main(int argc, const char* argv[])
         TimerAverage<20> timeit(true);
         for(std::size_t run = 0; run < RUNS; run++)
         {
-            TriangulationFlipGraph gr(PointFactory::randomSample(sampleSize));
+            auto pts = PointFactory::randomSample(sampleSize);
+            TriangulationFlipGraph gr(*pts);
             timeit.StartMeasure();
             gr.generateGraph();
             timeit.StopMeasure();

@@ -1,16 +1,18 @@
 #include "TriangulationFlipGraph.hpp"
 
 #include <queue>
+#include <set>
 
 TriangulationFlipGraph::TriangulationFlipGraph(const std::vector<Point>& pts)
 {
-    m_vertices.emplace_back(pts);
-    m_vertices[0].triangulate();
+    std::set < Point > st(pts.begin(), pts.end());
+    mp_coords = std::make_shared<std::vector<Point>>(st.begin(), st.end());
+    init();
 }
 
-TriangulationFlipGraph::TriangulationFlipGraph(std::vector<Point>&& pts)
+void TriangulationFlipGraph::init()
 {
-    m_vertices.emplace_back(std::move(pts));
+    m_vertices.emplace_back(mp_coords);
     m_vertices[0].triangulate();
 }
 
