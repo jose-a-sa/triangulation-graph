@@ -6,9 +6,9 @@ include_directories("../src/")
 
 add_executable(triangulation-graph-test ${MAIN_SRC} test.cpp)
 set_property(TARGET triangulation-graph-test PROPERTY CXX_STANDARD 17)
-target_compile_options(triangulation-graph-test PRIVATE -O0)
+#target_compile_options(triangulation-graph-test PRIVATE -O0)
 
-find_package(GTest)
+find_package(GTest REQUIRED)
 
 enable_testing()
 

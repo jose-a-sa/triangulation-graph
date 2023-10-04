@@ -29,4 +29,5 @@ set_property(TARGET triangulation-graph PROPERTY CXX_STANDARD 17)
 
 
 add_subdirectory(tests)
+add_subdirectory(benchmark)
 
