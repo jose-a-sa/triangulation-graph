@@ -9,7 +9,8 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/bin")
 
 include_directories(
         "/opt/homebrew/include/"
-        "${CMAKE_CURRENT_SOURCE_DIR}/include/")
+        "${CMAKE_CURRENT_SOURCE_DIR}/include/" ,
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/")
 link_directories(
         "/opt/homebrew/lib/"
         "${CMAKE_CURRENT_SOURCE_DIR}/lib/")
@@ -27,5 +28,7 @@ list(TRANSFORM MAIN_SRC PREPEND "${CMAKE_CURRENT_SOURCE_DIR}/")
 add_executable(triangulation-graph ${MAIN_SRC} src/main.cpp)
 set_property(TARGET triangulation-graph PROPERTY CXX_STANDARD 17)
 
-#add_subdirectory(tests)
+
+add_subdirectory(tests)
+add_subdirectory(benchmark)
 
