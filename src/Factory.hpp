@@ -26,13 +26,14 @@ public:
         return res;
     }
 
-    static std::shared_ptr<std::vector<Point>> makeSimplex(std::double_t a = 1.0)
+    static std::shared_ptr<std::vector<Point>>
+    makeSimplex(std::double_t a = 1.0)
     {
         auto res = std::make_shared<std::vector<Point>>();
         res->reserve(3);
-        res->push_back(Point(0, 0));
-        res->push_back(Point(a, 0));
-        res->push_back(Point(0, a));
+        res->emplace_back(0, 0);
+        res->emplace_back(a, 0);
+        res->emplace_back(0, a);
         return res;
     }
 };

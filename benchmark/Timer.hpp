@@ -1,5 +1,5 @@
-#ifndef UTILS_HPP
-#define UTILS_HPP
+#ifndef TIMER_HPP
+#define TIMER_HPP
 
 #include <iostream>
 #include <chrono>
@@ -37,19 +37,18 @@ private:
     std::string m_msg;
 };
 
+
 template<std::size_t Samples>
 class TimerAverage
 {
 public:
     TimerAverage(bool printOnInvalidation, std::string msg)
-        : m_printOnInvalidation(printOnInvalidation), m_msg(std::move(msg))
+        : m_printOnInvalidation(printOnInvalidation), m_msg(std::move(msg)), m_samples()
     {
-        m_samples = std::array<std::double_t, Samples>();
     }
     explicit TimerAverage(bool printOnInvalidation = true)
-        : m_printOnInvalidation(printOnInvalidation), m_msg("Timer")
+        : TimerAverage(printOnInvalidation, "Timer")
     {
-        m_samples = std::array<std::double_t, Samples>();
     }
     ~TimerAverage()
     {
@@ -65,7 +64,7 @@ public:
         auto endTimepoint = std::chrono::high_resolution_clock::now();
         auto start = std::chrono::time_point_cast<std::chrono::nanoseconds>(m_startTimepoint).time_since_epoch();
         auto end = std::chrono::time_point_cast<std::chrono::nanoseconds>(endTimepoint).time_since_epoch();
-        std::chrono::duration<std::double_t, std::micro> duration = end - start;
+        std::chrono::duration<std::double_t, std::nano> duration = end - start;
         std::double_t res = duration.count();
         if(m_currentIdx != Samples)
             m_samples[m_currentIdx++] = res;
@@ -89,4 +88,4 @@ private:
 };
 
 
-#endif //UTILS_HPP
+#endif //TIMER_HPP

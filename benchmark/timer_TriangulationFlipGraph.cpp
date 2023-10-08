@@ -2,7 +2,7 @@
 
 #include "Factory.hpp"
 #include "TriangulationFlipGraph.hpp"
-#include "Utils.hpp"
+#include "Timer.hpp"
 #include <vector>
 #include <array>
 
