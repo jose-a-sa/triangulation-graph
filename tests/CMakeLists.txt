@@ -2,9 +2,7 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
 
-include_directories("../src/")
-
-add_executable(triangulation-graph-test ${MAIN_SRC} test.cpp)
+add_executable(triangulation-graph-test ${MAIN_SRC} ../benchmark/timer_TriangulationFlipGraph.cpp)
 set_property(TARGET triangulation-graph-test PROPERTY CXX_STANDARD 17)
 #target_compile_options(triangulation-graph-test PRIVATE -O0)
 
