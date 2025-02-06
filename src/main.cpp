@@ -1,81 +1,71 @@
-#include <boost/assert.hpp>
-#include <boost/lexical_cast.hpp>
-#include <iostream>
-#include <stack>
+#include <CLI/CLI.hpp>
+
+#include <fmt/base.h>
+#include <fmt/ranges.h>
+
 #include <vector>
 
-#include "Point.hpp"
-#include "TriangulationFlipGraph.hpp"
+#include "mesh_triangulation_2d.h"
+#include "triangulation_flip_graph.h"
+#include "utils/timer.h"
+#include "vec2.h"
 
-void parseArgument(std::vector<Point>& res, const std::string& sv)
+template<class Traits>
+void run_measure(std::shared_ptr<std::vector<Vec2>> const& vec_ptr, std::string_view name)
 {
-    auto numParser = [&](const std::string& s) -> std::double_t
+    TriangulationFlipGraph<Traits> gr(vec_ptr);
+    gr.generate_graph();
+    gr.generate_graph();
+
+    Timer<std::chrono::milliseconds>::MeasureRepeated<10>(fmt::format("TriangulationFlipGraph<{}>", name),
+                                                          [&gr]() { gr.generate_graph(); });
+
+    ConcurrentTriangulationFlipGraph<Traits> gr2(vec_ptr);
+    gr2.generate_graph();
+    gr2.generate_graph();
+
+    for(size_t n_threads = 1; n_threads <= 2*std::thread::hardware_concurrency(); ++n_threads)
     {
-        std::double_t res;
-        try
-        {
-            res = boost::lexical_cast<std::double_t>(s);
-        }
-        catch(const boost::bad_lexical_cast& e)
-        {
-            std::cerr << e.what() << '\n';
-            std::exit(1);
-        }
-        return res;
-    };
-
-    auto stackToPointVector = [&](std::stack<std::string>& st) -> void
-    {
-        BOOST_ASSERT_MSG(st.size() == 2,
-                         "Point has only 2 elements, in parseArgument");
-
-        Point pt;
-        pt.x = numParser(st.top());
-        st.pop();
-        pt.y = numParser(st.top());
-        st.pop();
-        res.push_back(pt);
-    };
-
-    std::string curr;
-    std::stack<std::string> st;
-
-    for(const char& c : sv)
-    {
-        if(c == '(' || isspace(c))
-            continue;
-        else if(c == ')' || c == ',')
-        {
-            st.push(curr);
-            if(c == ')')
-                stackToPointVector(st);
-            curr.clear();
-        }
-        else
-            curr.push_back(c);
+        Timer<std::chrono::milliseconds>::MeasureRepeated<10>(
+            fmt::format("ConcurrentTriangulationFlipGraph<{}>, n_threads={}", name, n_threads),
+            [&gr2, n_threads]() { gr2.generate_graph(n_threads); });
     }
 }
 
-int main(int argc, const char* argv[])
+
+int main(int argc, char** argv)
 {
-    if(argc != 2)
+    CLI::App app{"App description"};
+    app.failure_message(CLI::FailureMessage::help);
+
+    std::vector<std::pair<Vec2::float_type, Vec2::float_type>> vec;
+    auto* points_opt = app.add_option("point_set", vec, "List of 2d points.")
+                           ->required()
+                           ->delimiter(',')
+                           ->type_name("FLOAT FLOAT, FLOAT FLOAT,");
+
+    argv = app.ensure_utf8(argv);
+    try
     {
-        std::cerr << "ERROR: Expecting 1 argument as a string of points." << std::endl;
-        std::exit(1);
+        app.parse(argc, argv);
+        if(points_opt->count() % 2 == 1)
+            throw CLI::ParseError("Number of arguments is not even.", 1);
     }
+    catch(CLI::ParseError const& e)
+    {
+        return app.exit(e);
+    };
 
-    std::string arg_coords(argv[1]);
-    std::vector<Point> coords;
-    parseArgument(coords, arg_coords);
+    vec.resize(14);
+    fmt::println("Vec: {}", vec);
 
-    TriangulationFlipGraph gr(coords);
-    gr.generateGraph();
+    using iter_t         = typename std::vector<std::pair<double, double>>::iterator;
+    auto const coord_ptr = std::make_shared<std::vector<Vec2>>(std::move_iterator<iter_t>(vec.begin()),
+                                                               std::move_iterator<iter_t>(vec.end()));
 
-    for(const auto& mesh : gr.vertices())
-        std::cout << mesh.toString() << std::endl;
-    for(const auto& [h, t] : gr.edges())
-        std::cout << "{" << h << "," << t << "} ";
-    std::cout << std::endl;
+    run_measure<MeshTriangulationDefaultTraits>(coord_ptr, "Std");
+    run_measure<MeshTriangulationAbslTraits>(coord_ptr, "Absl");
+    run_measure<MeshTriangulationTbbTraits>(coord_ptr, "Tbb");
 
     return 0;
 }

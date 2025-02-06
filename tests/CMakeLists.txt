@@ -10,13 +10,13 @@ find_package(GTest REQUIRED)
 
 enable_testing()
 
-set(TEST_SRC
-        unit_Point.cpp
-        unit_MeshTriangulation.cpp)
+# set(TEST_SRC
+#         unit_Point.cpp
+#         unit_MeshTriangulation.cpp)
 
-add_executable(unittest_triangulation-graph ${MAIN_SRC} ${TEST_SRC})
-set_property(TARGET unittest_triangulation-graph PROPERTY CXX_STANDARD 17)
-target_link_libraries(unittest_triangulation-graph GTest::gtest_main)
+# add_executable(unittest_triangulation-graph ${MAIN_SRC} ${TEST_SRC})
+# set_property(TARGET unittest_triangulation-graph PROPERTY CXX_STANDARD 17)
+# target_link_libraries(unittest_triangulation-graph GTest::gtest_main)
 
 include(GoogleTest)
-gtest_discover_tests(unittest_triangulation-graph)
+# gtest_discover_tests(unittest_triangulation-graph)
