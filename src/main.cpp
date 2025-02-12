@@ -1,3 +1,7 @@
+#define MESH_TRIANGULATION_HAS_STD 1
+#define MESH_TRIANGULATION_HAS_TBB 1
+#define MESH_TRIANGULATION_HAS_ABSL 1
+
 #include <CLI/CLI.hpp>
 
 #include <fmt/base.h>
@@ -13,18 +17,18 @@
 template<class Traits>
 void run_measure(std::shared_ptr<std::vector<Vec2>> const& vec_ptr, std::string_view name)
 {
-    TriangulationFlipGraph<Traits> gr(vec_ptr);
-    gr.generate_graph();
-    gr.generate_graph();
-
-    Timer<std::chrono::milliseconds>::MeasureRepeated<10>(fmt::format("TriangulationFlipGraph<{}>", name),
-                                                          [&gr]() { gr.generate_graph(); });
+    // TriangulationFlipGraph<Traits> gr(vec_ptr);
+    // gr.generate_graph();
+    // gr.generate_graph();
+    //
+    // Timer<std::chrono::milliseconds>::MeasureRepeated<10>(fmt::format("TriangulationFlipGraph<{}>", name),
+    //                                                       [&gr]() { gr.generate_graph(); });
 
     ConcurrentTriangulationFlipGraph<Traits> gr2(vec_ptr);
     gr2.generate_graph();
     gr2.generate_graph();
 
-    for(size_t n_threads = 1; n_threads <= 2*std::thread::hardware_concurrency(); ++n_threads)
+    for(size_t n_threads = 1; n_threads <= 2 * std::thread::hardware_concurrency(); ++n_threads)
     {
         Timer<std::chrono::milliseconds>::MeasureRepeated<10>(
             fmt::format("ConcurrentTriangulationFlipGraph<{}>, n_threads={}", name, n_threads),
@@ -56,16 +60,19 @@ int main(int argc, char** argv)
         return app.exit(e);
     };
 
-    vec.resize(14);
+    // vec.resize(18);
     fmt::println("Vec: {}", vec);
 
     using iter_t         = typename std::vector<std::pair<double, double>>::iterator;
     auto const coord_ptr = std::make_shared<std::vector<Vec2>>(std::move_iterator<iter_t>(vec.begin()),
                                                                std::move_iterator<iter_t>(vec.end()));
 
-    run_measure<MeshTriangulationDefaultTraits>(coord_ptr, "Std");
-    run_measure<MeshTriangulationAbslTraits>(coord_ptr, "Absl");
-    run_measure<MeshTriangulationTbbTraits>(coord_ptr, "Tbb");
+    // run_measure<MeshTriangulationDefaultTraits>(coord_ptr, "Std");
+    // run_measure<MeshTriangulationAbslTraits>(coord_ptr, "Absl");
+    // run_measure<MeshTriangulationTbbTraits>(coord_ptr, "Tbb");
 
-    return 0;
+    ConcurrentTriangulationFlipGraph<MeshTriangulationAbslTraits> gr2(coord_ptr);
+    gr2.generate_graph();
+
+    return gr2.nodes().size() > 0 ? 0 : 1;
 }

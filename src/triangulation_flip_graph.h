@@ -7,6 +7,7 @@
 
 #include <cstddef>
 
+#include <moodycamel/concurrent_queue.h>
 #include <tbb/concurrent_unordered_set.h>
 #include <unordered_set>
 #include <vector>
@@ -92,6 +93,45 @@ private:
     NodeSet_t                                nodes_;
     TrigEdgeSet_t                            edges_;
 };
+
+// template<class MeshTraits>
+// class ConcurrentTriangulationFlipGraphCDS
+// {
+//     using Mesh_t    = MeshTriangulation2D<MeshTraits>;
+//     using NodeSet_t = tbb::concurrent_unordered_set<std::unique_ptr<Mesh_t const>, MeshTriangulation2DCRefHash,
+//                                                     MeshTriangulation2DCRefEqualTo>;
+//     using TrigEdgeSet_t =
+//         tbb::concurrent_unordered_set<std::pair<Mesh_t const*, Mesh_t const*>, MeshTriangulation2DCRefEdgeHash>;
+//
+// public:
+//     explicit ConcurrentTriangulationFlipGraphCDS(std::shared_ptr<std::vector<Vec2> const> pts)
+//         : coords_ptr_(std::move(pts))
+//     {}
+//
+//     void generate_graph(size_t num_threads = 8);
+//
+//     NodeSet_t const&     nodes() const { return nodes_; }
+//     TrigEdgeSet_t const& edges() const { return edges_; }
+//
+// private:
+//     std::shared_ptr<std::vector<Vec2> const> coords_ptr_;
+//     NodeSet_t                                nodes_;
+//     TrigEdgeSet_t                            edges_;
+//
+//
+//     struct BFSState
+//     {
+//         EdgeCell      edge{};
+//         Mesh_t const* triangulation{};
+//
+//         BFSState() = default;
+//         BFSState(EdgeCell const eg, Mesh_t const* tr)
+//             : edge(eg),
+//               triangulation(tr)
+//         {}
+//     };
+//     moodycamel::ConcurrentQueue<BFSState> bfs_queue_;
+// };
 
 
 #include "triangulation_flip_graph.inl"

@@ -2,7 +2,6 @@
 #define MESH_TRIANGULATION_2D_INL
 
 #include <vector>
-#include "mesh_triangulation_2d.h"
 #include "utils/algorithm.h"
 
 namespace detail

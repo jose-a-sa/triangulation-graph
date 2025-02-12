@@ -15,16 +15,17 @@ void TriangulationFlipGraph<Traits>::generate_graph()
     auto seed = std::make_unique<Mesh_t>(coords_ptr_);
     seed->triangulate();
 
-    // push seed into a lock-free queue
-    std::queue<Mesh_t const*> bfs_queue;
-    auto const                insert_res0 = nodes_.insert(std::move(seed));
-    if(insert_res0.second)
-        bfs_queue.push(insert_res0.first->get());
+    std::queue<Mesh_t const*> bfs_queue_;
 
-    while(!bfs_queue.empty())
+    // push seed into a lock-free queue
+    auto const insert_res0 = nodes_.insert(std::move(seed));
+    if(insert_res0.second)
+        bfs_queue_.push(insert_res0.first->get());
+
+    while(!bfs_queue_.empty())
     {
-        auto const current_triangulation = bfs_queue.front();
-        bfs_queue.pop();
+        auto const current_triangulation = bfs_queue_.front();
+        bfs_queue_.pop();
 
         // fmt::println("Got: {}", current_triangulation->get_edge_adjacency().size());
 
@@ -37,7 +38,7 @@ void TriangulationFlipGraph<Traits>::generate_graph()
             edges_.emplace(current_triangulation, insert_res.first->get());
             if(insert_res.second)
             {
-                bfs_queue.push(insert_res.first->get());
+                bfs_queue_.push(insert_res.first->get());
             }
         }
         // current_triangulation = nullptr;
@@ -51,7 +52,10 @@ void ConcurrentTriangulationFlipGraph<Traits>::generate_graph(size_t const num_t
     nodes_.clear();
     edges_.clear();
 
-    // push seed into a lock-free queue
+    nodes_.reserve(1 << (8 + coords_ptr_->size()));
+    edges_.reserve(1 << (8 + coords_ptr_->size()));
+
+
     struct BFSState
     {
         EdgeCell      edge{};
@@ -63,19 +67,15 @@ void ConcurrentTriangulationFlipGraph<Traits>::generate_graph(size_t const num_t
               triangulation(tr)
         {}
     };
-    moodycamel::ConcurrentQueue<BFSState> bfs_queue;
+    moodycamel::ConcurrentQueue<BFSState> bfs_queue_;
 
     // get seed triangulation from MeshTriangulation2D
     auto seed = std::make_unique<Mesh_t>(coords_ptr_);
     seed->triangulate();
     Mesh_t const* current_triangulation = nodes_.insert(std::move(seed)).first->get();
 
-    std::vector<BFSState> bulk0;
-    bulk0.reserve(current_triangulation->flippable().size());
     for(auto&& eg: current_triangulation->flippable())
-        bulk0.emplace_back(eg, current_triangulation);
-
-    bfs_queue.enqueue_bulk(bulk0.begin(), bulk0.size());
+        bfs_queue_.enqueue(BFSState(eg, current_triangulation));
 
 
     // constexpr size_t NUM_THREADS = 8;
@@ -84,19 +84,18 @@ void ConcurrentTriangulationFlipGraph<Traits>::generate_graph(size_t const num_t
     {
         // size_t counter = 0;
         BFSState state{};
-        while(bfs_queue.try_dequeue(state))
+        while(bfs_queue_.try_dequeue(state))
         {
             auto new_triangulation_ptr = std::make_unique<Mesh_t>(*state.triangulation);
             new_triangulation_ptr->flip_edge(state.edge);
 
-            auto const [ptr, inserted] =
-                nodes_.emplace(std::move(new_triangulation_ptr)); // requires multi-producer/multi-consumer
-            edges_.emplace(state.triangulation, ptr->get()); // requires multi-producer
+            auto const [ptr, inserted] = nodes_.emplace(std::move(new_triangulation_ptr));
+            edges_.emplace(state.triangulation, ptr->get());
 
             if(inserted)
             {
                 for(auto&& eg: ptr->get()->flippable())
-                    bfs_queue.enqueue(BFSState(eg, ptr->get()));
+                    bfs_queue_.enqueue(BFSState(eg, ptr->get()));
             }
             // ++counter;
         }
@@ -109,6 +108,7 @@ void ConcurrentTriangulationFlipGraph<Traits>::generate_graph(size_t const num_t
     {
         threads.emplace_back(worker, t);
     }
+    // worker(num_threads);
 
     for(auto& thread: threads)
     {

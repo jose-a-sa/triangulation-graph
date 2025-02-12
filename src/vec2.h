@@ -2,7 +2,7 @@
 #define VEC2_H_
 
 #include <cmath>
-#include <utility>
+#include <fmt/format.h>
 
 // clang-format off
 struct Vec2

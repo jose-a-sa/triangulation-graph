@@ -1,10 +1,8 @@
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
+# Specify the minimum CMAKE version required
+cmake_minimum_required(VERSION 3.24) # or higher if applicable
+project(triangulation-graph-tests)
 
-find_package(benchmark REQUIRED)
+include(../cmake/FetchBenchmark.cmake)
 
-# add_executable(benchmark_TriangulationFlipGraph ${MAIN_SRC} benchmark_TriangulationFlipGraph.cpp)
-# set_property(TARGET benchmark_TriangulationFlipGraph PROPERTY CXX_STANDARD 17)
-# target_link_libraries(benchmark_TriangulationFlipGraph benchmark::benchmark)
-
+add_executable(bm_TriangulationFlipGraph bm_triangulation_flip_graph.cpp)
+target_link_libraries(bm_TriangulationFlipGraph fmt::fmt benchmark::benchmark tbb absl::flat_hash_map absl::flat_hash_set)

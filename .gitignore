@@ -2,6 +2,7 @@ build
 cmake-build-*
 .idea
 .vscode
+.cache
 
 CMakeLists.txt.user
 CMakeCache.txt

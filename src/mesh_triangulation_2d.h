@@ -1,21 +1,17 @@
 #ifndef CONVEX_TRIANGULATIONS_MESHTRIANGULATION2D_HPP
 #define CONVEX_TRIANGULATIONS_MESHTRIANGULATION2D_HPP
 
+#define MESH_TRIANGULATION_HAS_STD 1
+#define MESH_TRIANGULATION_HAS_TBB 1
+#define MESH_TRIANGULATION_HAS_ABSL 1
+
 #include "mesh_cell.h"
 #include "utils/hash.h"
 #include "vec2.h"
 
 #include <cstddef>
-#include <utility>
-#include <vector>
 #include <unordered_map>
 #include <unordered_set>
-
-
-#define MESH_TRIANGULATION_HAS_STD 1
-#define MESH_TRIANGULATION_HAS_TBB 1
-#define MESH_TRIANGULATION_HAS_ABSL 1
-
 
 struct EdgeCellHash
 {
